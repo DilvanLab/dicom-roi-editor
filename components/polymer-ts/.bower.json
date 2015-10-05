@@ -1,0 +1,37 @@
+{
+  "name": "polymer-ts",
+  "homepage": "https://github.com/nippur72/PolymerTS",
+  "authors": [
+    "Antonino Porcino <nino.porcino@gmail.com>"
+  ],
+  "description": "Polymer 1.0 for TypeScript",
+  "main": "polymer-ts.js",
+  "keywords": [
+    "polymer",
+    "typescript"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "/*",
+    "!polymer-ts.*",
+    "!LICENSE.txt",
+    "!README.md"
+  ],
+  "dependencies": {
+    "polymer": ">=1.0.8",
+    "webcomponentsjs": ">=0.7.10"
+  },
+  "typescript": {
+    "definition": "polymer-ts.d.ts"
+  },
+  "version": "0.1.21",
+  "_release": "0.1.21",
+  "_resolution": {
+    "type": "version",
+    "tag": "0.1.21",
+    "commit": "758154cb3de8a8ff67c14e9a71327a7c2e7f8fde"
+  },
+  "_source": "git://github.com/nippur72/PolymerTS.git",
+  "_target": "~0.1.15",
+  "_originalSource": "polymer-ts"
+}
