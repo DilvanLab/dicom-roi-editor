@@ -1,0 +1,33 @@
+{
+  "name": "dicom-roi-editor",
+  "version": "0.1.0",
+  "authors": [
+    "Dilvan Moreira <dilvan@gmail.com>"
+  ],
+  "description": "A Polymer component to visualize Dicom images and edit 2D and 3D ROI (Regions of Interest). It allows the edition of 2D (points, lines, polygons, etc) and 3D (masks) ROIs in the axial, frontal and sagittal views.",
+  "keywords": [
+    "web-component",
+    "radiology",
+    "polymer",
+    "dicom",
+    "epad",
+    "ROI",
+    "semantic web"
+  ],
+  "main": "dicom-roi-editor.html",
+  "license": "http://www.gnu.org/licenses/gpl-3.0.en.html",
+  "homepage": "https://github.com/dilvanLab/dicom-roi-editor/",
+  "ignore": [
+    "/.*",
+    "/test/",
+    "/demo/"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.0.0",
+    "polymer-ts": "~0.1.15"
+  },
+  "devDependencies": {
+    "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
+    "web-component-tester": "*"
+  }
+}

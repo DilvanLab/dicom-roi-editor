@@ -1,0 +1,177 @@
+
+<link rel="import" href="../polymer/polymer.html">
+
+<!--
+A Polymer component to visualize Dicom images and edit 2D and 3D ROI (Regions of Interest).
+It allows the edition of 2D (points, lines, polygons, etc) and 3D (masks) ROIs in the axial, frontal and sagittal views.
+
+Example:
+
+       <dicom-roi-editor
+        canvas = '#epad-canvas'
+        pref = '{
+          overrideCenter: 0,
+          overrideWidth: 0,
+          windowOverride: false
+          }'
+        series = '{
+          bitsStored: "12",
+          columns: 512,
+          numberOfImages: 100,
+          pixelRepresentation: "0",
+          pixelSpacing: "0.974609375\\0.974609375",
+          rescaleIntercept: "-1000",
+          rescaleSlope: "1",
+          rows: 512,
+          sliceThickness: "5.0",
+          windowCenter: "00040\\00040",
+          windowWidth: "00400\\00400"
+          }'
+        >
+    </dicom-roi-editor>
+
+    <script>
+           document.querySelector('#load-button').addEventListener('click', function() {
+              var editor = document.querySelector('dicom-roi-editor').editor;
+              // Read png files
+              for (var i = 0; i < 7; i ++) {
+                  var url = "1_2_752_24_7_19011385_453825/1_2_840_113704_1_111_424_1207241028_7/filename" + i +".png";
+                  editor.loadPngTexture(i, url);
+            }
+        });
+   </script>
+
+@demo
+-->
+<dom-module id="dicom-roi-editor">
+
+  <style>
+  </style>
+
+  <template>
+    <content></content>
+  </template>
+
+</dom-module>
+
+<script type="text/javascript" src="js/app.js"></script>
+
+<script>
+
+  Polymer({
+      is: "dicom-roi-editor",
+      properties: {
+          canvas: {type: String, value: ""},
+          pref: {type: String, value:null},
+          series: {type: String, value: null},
+
+          AXIAL: {type: Number, value: br.usp.dilvanLab.roi3DEditor.AXIAL, readonly:true},
+          FRONTAL: {type: Number, value: br.usp.dilvanLab.roi3DEditor.FRONTAL, readonly:true},
+          SAGITTAL: {type: Number, value: br.usp.dilvanLab.roi3DEditor.SAGITTAL, readonly:true},
+          ALL: {type: Number, value: br.usp.dilvanLab.roi3DEditor.ALL, readonly:true},
+
+          imagesPerTexture: {type: Number, readonly: true},
+          defaultWC: {type: Number, readonly: true},
+          defaultWW: {type: Number,  readonly: true},
+
+          windowingCenter: {type: Number, observed: '_windowingCenter(oldValue, newValue);'},
+          windowingWidth: {type: Number, observed: '_windowingWidth(oldValue, newValue);'},
+          activePlane: {type: Number, observed: '_activePlane(oldValue, newValue);'},
+
+          editor: {type: Object, readonly: true }
+      },
+      behaviors: [],
+
+      attached: function () {
+          // `attached` fires once the element and its parents have been inserted
+          // into a document.
+
+          if (this.pref && this.series) {
+              this.init(eval("(" + this.pref + ")"), eval("(" + this.series + ")"));
+          }
+      },
+      // Element Behavior
+
+      /**
+       * The `seed-element-lasers` event is fired whenever `fireLasers` is called.
+       *
+       * @event test not real
+       * @detail {{sound: String}}
+       */
+
+      _windowingCenter: function(oldValue, newValue){
+          this.editor.windowingCenter = newValue;
+          this.windowingCenter = newValue;
+      },
+      _windowingWidth: function(oldValue, newValue){
+          this.editor.windowingWidth = newValue;
+          this.windowingWidth = newValue;
+      },
+      _activePlane: function(oldVlaue, newValue) {
+          this.editor.activePlane = newValue;
+          this.activePlane = newValue;
+      },
+
+      init: function(pref, series){
+          var canvas = document.querySelector(this.canvas);
+          if (!canvas) alert('Null canvas: ' + this.canvas);
+          //alert(this['pref']);
+          //this.editor = new br.usp.dilvanLab.roi3DEditor.WebGLViewerImpl(canvas, eval("(" + this['pref'] + ")"), eval("(" + this['series'] + ")"));
+          this.editor = new br.usp.dilvanLab.roi3DEditor.WebGLViewerImpl(canvas, pref, series);
+          this.editor.activePlane = br.usp.dilvanLab.roi3DEditor.ALL;
+
+          this.imagesPerTexture = this.editor.imagesPerTexture;
+          this.defaultWC = this.editor.defaultWC;
+          this.defaultWW = this.editor.defaultWW;
+
+          this.windowingCenter = this.editor.windowingCenter;
+          this.windowingWidth = this.editor.windowingWidth;
+          this.activePlane = this.ALL;
+      },
+
+      /**
+       * @return {boolean} true if all png images are already loaded.
+       */
+      areImagesLoaded: function () { return editor.imagesLoaded},
+      /**
+       * @return {number} the axial image number.
+       */
+      getAxialImage: function () { return editor.axialImage},
+      drawImage: function() {return editor.drawImage()},
+      /**
+       * Gets the number of images per texture.
+       *
+       * @return {number} number of images.
+       */
+
+
+      handleLoadedJpgTextures: function(i, imageJpg) {editor.handleLoadedJpgTextures(i, imageJpg)},
+      handleLoadedTexture: function(i, imageJpg) {editor.handleLoadedTexture(i, imageJpg)},
+      areJpgsImagesLoaded: function () { return editor.jpgsImagesLoaded},
+      setActiveImage: function(plane, coord) {editor.setActiveImage(plane, coord)},
+      markChanged: function() {editor.markChanged()},
+      //getActivePlane: function() {return editor.activePlane},
+      //setActivePlane: function(plane) {editor.activePlane = plane},
+      //getWindowingCenter: function() {return editor.windowingCenter},
+      //setWindowingCenter: function(center) {editor.windowingCenter = center},
+      //getWindowingWidth: function() {return editor.windowingWidth},
+      //setWindowingWidth: function(width) {editor.windowingWidth = width},
+      getZoom: function(plane) {return editor.getZoom(plane)},
+      setZoom: function(plane, zoom) {editor.setZoom(plane, zoom)},
+      getImageNumber: function() {return editor.imageNumber},
+      pixels2Units: function(plane, pixels) {return editor.pixels2Units(plane, pixels)},
+      getX: function(plane) {return editor.getX(plane)},
+      setX: function(plane, x) {editor.setX(plane, x)},
+      getY: function(plane) {return editor.getY(plane)},
+      setY: function(plane, y) {editor.setY(plane, y)},
+      setPlanesCoord: function(plane, x, y) {editor.setPlanesCoord(plane, x, y)},
+      getImageCoord: function(plane) { return editor.getImageCoord(plane)},
+
+      setCursorRadius: function(radius) {editor.cursorRadius = radius},
+      showSphere: function() {editor.showSphere()},
+      setCursorCenter: function(plane, x, y) {editor.setCursorCenter(plane, x, y)},
+      stampSphere: function() {editor.stampSphere()}
+  });
+
+</script>
+
