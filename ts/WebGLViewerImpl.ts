@@ -90,6 +90,7 @@ module br.usp.dilvanLab.roi3DEditor {
         protected simpleShader:WebGLProgram;
 
         private jpegTransfShader:WebGLProgram;
+        private loadShader:WebGLProgram;
         private dy:number;
 
         private _defaultWW:number;
@@ -105,10 +106,14 @@ module br.usp.dilvanLab.roi3DEditor {
         protected pixelSpacing:number;
         private _sliceSpacing:number;
 
-        constructor(canvas:HTMLCanvasElement, pref:Preferences=null, series:DicomSeriesInfo=null) {
+        protected mode:number = LOAD_IMAGES;
+
+        constructor(canvas:HTMLCanvasElement, mode:number, pref:Preferences=null, series:DicomSeriesInfo=null) {
             this.gl = GL.create(canvas);
 
             if (!this.gl) return;
+
+            this.mode = mode;
 
             const res = this.gl.getExtension("OES_texture_float");
             // TODO: Make message more meaningful
@@ -185,7 +190,7 @@ module br.usp.dilvanLab.roi3DEditor {
         }
 
         //@Override
-        drawImage() {
+        drawImage():void {
             //alert('Draw image.');
             if (this.numImgs === 0 || (this.loadCounter === 0 && this.loadJpgsCounter === 0))
                 return;
@@ -426,19 +431,19 @@ module br.usp.dilvanLab.roi3DEditor {
         handleLoadedJpgTexture(i:number, imageJpg:HTMLImageElement) {
             let text = this.texture[i];
             if (!text.isPngLoaded)
-                this.handleLoadedJpgTextureWWW(text, imageJpg);
-            this.loadJpgsCounter += IMAGES_PER_TEXTURE;
+                this.handleOneLoadedJpgTexture(text, imageJpg);
+            //this.incLoadCounter();
             if (i === 0) this.drawImage();
         }
 
         //@Override
-        private handleLoadedJpgTextureWWW(imgText:ImgTexture, imageJpg:HTMLImageElement) {
+        private handleOneLoadedJpgTexture(imgText:ImgTexture, imageJpg:HTMLImageElement) {
 
             const gl = this.gl;
             const jpgTexture = gl.createTexture();
 
             // Read the jpg image into a texture
-            this.handleLoadedTextureWWW(jpgTexture, imageJpg);
+            this.loadTexture(jpgTexture, imageJpg);
 
             // Rebind framebuffer
             gl.bindFramebuffer(gl.FRAMEBUFFER, imgText.framebuffer);
@@ -455,6 +460,7 @@ module br.usp.dilvanLab.roi3DEditor {
             gl.activeTexture(gl.TEXTURE0);
             gl.bindTexture(gl.TEXTURE_2D, jpgTexture);
             GL.setI(gl, this.jpegTransfShader, "uSampler", 0);
+            //TODO: Not used by jpegTransfShader: test and delete if true
             GL.set2fv(gl, this.jpegTransfShader, "u_translation", new Float32Array([0, 0]));
 
             gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -472,7 +478,8 @@ module br.usp.dilvanLab.roi3DEditor {
             //this.gl.deleteBuffer(renderbuffer);
         }
 
-        private handleLoadedTextureWWW(text:WebGLTexture, textureImage:HTMLImageElement) {
+        private loadTexture(text:WebGLTexture, textureImage) {
+
 
             const gl = this.gl;
             // bind the texture
@@ -496,13 +503,75 @@ module br.usp.dilvanLab.roi3DEditor {
 
             // Cleanup
             gl.bindTexture(gl.TEXTURE_2D, null);
-
-            this.loadCounter += IMAGES_PER_TEXTURE;
         }
 
-        handleLoadedTexture(i:number, textureImage:HTMLImageElement) {
-            let text= this.texture[i].texture;
-            this.handleLoadedTextureWWW(text, textureImage);
+        //private incLoadCounter(){
+        //    if (this.mode===LOAD_4X4_IMAGES) {
+        //        this.loadCounter += IMAGES_PER_TEXTURE;
+        //    }
+        //    this.loadCounter++;
+        //}
+
+        //handleLoadedTexture(i:number, textureImage:HTMLImageElement) {
+        //
+        //    if (this.mode===LOAD_4X4_IMAGES) {
+        //        let text= this.texture[i].texture;
+        //        this.loadTexture(text, textureImage);
+        //        this.incLoadCounter();
+        //        return;
+        //    }
+        //    //    this.loadCounter++;
+        //    //
+        //    //let imgText = this.texture[i];
+        //    //
+        //    //const gl = this.gl;
+        //    //const pngTexture = gl.createTexture();
+        //    //
+        //    //// Read the image into a texture
+        //    //this.loadTexture(pngTexture, textureImage);
+        //    //
+        //    //// Rebind framebuffer
+        //    //gl.bindFramebuffer(gl.FRAMEBUFFER, imgText.framebuffer);
+        //    //gl.viewport(0, 0, imgText.width, imgText.height);
+        //    //gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+        //    //
+        //    //// Choose jpeg transform program
+        //    //gl.useProgram(this.loadShader);
+        //    //
+        //    //// look up where the vertex data needs to go.
+        //    //this.createUntBuf(this.loadShader, "a_position", -1.0, -1.0, 1.0, 1.0);
+        //    //this.createUntBuf(this.loadShader, "a_texCoord", 0.0, 0.0, 1.0, 1.0);
+        //    //
+        //    //gl.activeTexture(gl.TEXTURE0);
+        //    //gl.bindTexture(gl.TEXTURE_2D, pngTexture);
+        //    //GL.setI(gl, this.loadShader, "uSampler", 0);
+        //    ////GL.set2fv(gl, this.loadShader, "u_translation", new Float32Array([0, 0]));
+        //    //
+        //    //gl.drawArrays(gl.TRIANGLES, 0, 6);
+        //    //
+        //    //// Generate new texture
+        //    //gl.bindTexture(gl.TEXTURE_2D, imgText.texture);
+        //    //gl.generateMipmap(gl.TEXTURE_2D);
+        //    //
+        //    //gl.bindTexture(gl.TEXTURE_2D, null);
+        //    //gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+        //    //
+        //    //// Delete texture
+        //    //gl.deleteTexture(pngTexture);
+        //    ////this.gl.deleteBuffer(imgText.framebuffer);
+        //    ////this.gl.deleteBuffer(renderbuffer);
+        //}
+
+        private numImagesInTexture(i:number) {
+            // A bit complicated, as the last texture may have different sizes
+            let size = Math.floor(this.numImgs / (IMAGES_PER_TEXTURE-1));
+            let left = this.numImgs % (IMAGES_PER_TEXTURE-1);
+
+            size = (left===0 || left===1)? size : size+1;
+
+            if (i !== size-1 || left==1)
+                return IMAGES_PER_TEXTURE;
+            return (left==0) ? IMAGES_PER_TEXTURE - 1 : left;
         }
 
         private init(pref:Preferences, series:DicomSeriesInfo) {
@@ -577,6 +646,11 @@ module br.usp.dilvanLab.roi3DEditor {
             this.jpegTransfShader = WebGLViewerImpl.createProgram(gl,
                 shaders.simpleVs, shaders.jpegTransfFs);
 
+            this.loadShader = WebGLViewerImpl.createProgram(gl,
+                shaders.simpleVs, shaders.plainFs);
+
+
+
             this.defIntVars(this.jpegTransfShader);
             GL.setI(gl, this.jpegTransfShader, "defaultWC", this._defaultWC);
             GL.setI(gl, this.jpegTransfShader, "defaultWW", this._defaultWW);
@@ -591,6 +665,10 @@ module br.usp.dilvanLab.roi3DEditor {
                     gl.TEXTURE_MIN_FILTER, gl.NEAREST);
                 this.texture.push(text);
                 //alert('taxt:'+i+'='+this.texture.length);
+                if (this.mode===LOAD_IMAGES) {
+                    // Find how many images will be loaded in the canvas
+                    text.createCanvas(this.imgWidth, this.imgHeight, this.numImagesInTexture(i));
+                }
             }
         }
 
@@ -783,20 +861,78 @@ module br.usp.dilvanLab.roi3DEditor {
         }
 
         loadPngTexture(i:number, url:string) {
-            let image = new Image();
+            let image:HTMLImageElement = new Image();
             image.src = url;
             image.crossOrigin = "Anonymous";
-            image.onload = ()=> {
-                //alert("loading: "+this.texture[i]+" - "+url);
-                let text= this.texture[i].texture;
-                this.handleLoadedTextureWWW(text, image);
-                //incrementProgress();
-
-                this.drawImage();
-                //alert("loaded"+url);
+            image.onerror= ()=> {
+                console.info("Error loading png....  " + image.src);
             };
-            // Delete image from browser memory
-            //image.parentElement.removeChild(image);
+            image.onload= ()=> {
+                //alert("loading: "+this.texture[i]+" - "+url);
+
+                if (this.mode===LOAD_IMAGES) {
+
+                    // Find the correct canvas for image
+                    let c = Math.floor(i / (IMAGES_PER_TEXTURE-1));
+                    // Find the coords in canvas for image
+                    let pos = i % (IMAGES_PER_TEXTURE-1);
+
+                    //If last image is exactly on the last position in the last texture
+                    if (c===this.texture.length) {
+                        c--;
+                        pos= IMAGES_PER_TEXTURE-1;
+                    }
+
+                    let posX = pos % IMAGES_PER_AXIS * this.imgWidth;
+                    let posY = Math.floor(pos / IMAGES_PER_AXIS) * this.imgHeight;
+
+                    this.texture[c].canvas.getContext('2d').drawImage(image, posX, posY);
+
+                    //Repeat in the last texture, if the first image
+                    if (pos===0 && c!==0) {
+                        this.texture[c-1].canvas.getContext('2d').drawImage(image,
+                            (IMAGES_PER_AXIS-1) * this.imgWidth,
+                            (IMAGES_PER_AXIS-1) * this.imgHeight);
+                        this.texture[c-1].numImgsRead--;
+                        this.loadCounter++;
+                        if (this.texture[c-1].numImgsRead===0) {
+                            this.loadTexture(this.texture[c-1].texture, this.texture[c-1].canvas);
+                            this.texture[c-1].canvas = null;
+                            this.drawImage();
+                        }
+                    }
+                    //Free image from memory
+                    image = null;
+
+                    this.texture[c].numImgsRead--;
+                    this.loadCounter++;
+
+                    if (this.texture[c].numImgsRead===0) {
+                        this.loadTexture(this.texture[c].texture, this.texture[c].canvas);
+                        this.texture[c].canvas = null;
+                        this.drawImage();
+                    }
+                    return;
+                } else {
+                    this.loadTexture(this.texture[i].texture, image);
+
+                    //Free image from memory
+                    image = null;
+
+                    // It doesn't have to be precise
+                    //TODO: Improve that
+                    this.loadCounter += this.numImagesInTexture(i);
+                    if (this.loadCounter>this.numImgs) this.loadCounter = this.numImgs;
+
+                    //incrementProgress();
+                    this.drawImage();
+
+                    //if (spWebGL.areImagesLoaded()) {
+                    //    spWebGL.markChanged();
+                    //    drawImage();
+                    //}
+                }
+            };
         }
     }
 }

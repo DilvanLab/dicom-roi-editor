@@ -162,6 +162,7 @@ var br;
                     shaders.simpleVs = "\nprecision highp float;\nprecision highp sampler2D;\nprecision highp int;\n\nattribute vec2 a_texCoord;\nattribute vec2 a_position;\n\nvarying vec2 v_texCoord;\n\nvoid main() {\n\tgl_Position = vec4(a_position, 0, 1);\n\t// pass the texCoord to the fragment shader\n   \t// The GPU will interpolate this value between points\n   \tv_texCoord = a_texCoord;\n}\n    ";
                     shaders.stampFs = "\nprecision highp float;\nprecision highp sampler2D;\nprecision highp int;\n\nuniform int imagesPerAxis;\nuniform sampler2D uDSO;\nuniform sampler2D spheres;\n\nuniform int baseInd;   //True index of the first image in this set\nuniform float dz;      //Distance between slices, in units\nuniform int cmdSize;\n//uniform float sphereX;\n//uniform float sphereY;\n//uniform float sphereZ;\n//vec3 sphe = vec3(sphereX, sphereY, sphereZ);\n\nuniform float maxX;\nconst int maxSize = 30000;\n//uniform vec4 spheres1[maxSize];\nuniform float sphereRadius; //in units\n\n// the texCoords passed in from the vertex shader.\nvarying vec2 v_texCoord;\n\nfloat square(float x) {return x*x;}\n\nvec4 getSphere(int i) {\n    float j = float(i);\n    return texture2D(spheres, vec2(mod(j,maxX)/maxX, 1.0 - floor(j/maxX)/maxX));\n}\n\n//   It took 5 seconds (4s with cube test) in the one line test (one line from\n//   the top to the botton with default cursor radius)\nbool isInsideSphere(vec3 plane) {\n    vec3 delta;\n    for(int i=0; i<maxSize; i++) {\n        if (i>=cmdSize) break;\n\n        //delta = plane-spheres1[i].xyz;\n        delta = plane-getSphere(i).xyz;\n\n        // Test first the cube where the sphere is\n        if (delta.x>sphereRadius || delta.y>sphereRadius) continue;\n\n        if (square(delta.x) + square(delta.y) <= square(sphereRadius) - square(delta.z))\n            return true;\n    }\n    return false;\n}\n\n//   Disposition of images in the 4x4 grid\n/*   0  1  2  3\n     4  5  6  7\n     8  9 10 11\n    12 13 14 15\n*/\nvoid main(void) {\n    vec2 p = v_texCoord;\n\n    // Calculate image index from point p\n    float ipa = float(imagesPerAxis);\n    float indX = ceil(p.x*ipa)-1.0;\n    if (indX<0.0) indX = 0.0;\n    float indY = ceil(p.y*ipa)-1.0;\n    if (indY<0.0) indY = 0.0;\n        float ind = (3.0-indY) * ipa + indX;\n\n    vec4 masks = texture2D(uDSO, p);\n\tvec2 p2 = vec2(fract(p.x*ipa), fract(p.y*ipa));\n\n    bool isInside = isInsideSphere(vec3(p2, (ind + float(baseInd)) * dz));\n\n    vec4 ret = vec4(0.0, 0.0, 0.0, 0.0);\n    vec4 k;\n\n    masks= floor(masks*255.0);\n    int bit = 0;\n    float power = 1.0;\n\n    for (int i = 0; i < 8; i++) {\n        k = mod(masks, 2.0); masks= floor(masks/2.0);\n        //if (i==bit) {\n            k.r = (isInside?1.0:k.r);\n        //}\n        ret += k*power;\n        power *= 2.0;\n    }\n    gl_FragColor = ret/255.0;\n}\n    ";
                     shaders.transfVs = "\nprecision highp float;\nprecision highp sampler2D;\nprecision highp int;\n\nattribute vec2 a_texCoord;\nattribute vec2 a_position;\n\nuniform vec2 u_translation;\n\nvarying vec2 v_texCoord;\n\nvoid main() {\n\tgl_Position = vec4(a_position + u_translation, 0, 1);\n\t// pass the texCoord to the fragment shader\n   \t// The GPU will interpolate this value between points\n   \tv_texCoord = a_texCoord;\n}\n    ";
+                    shaders.plainFs = "\nprecision highp float;\nprecision highp sampler2D;\n\nuniform sampler2D uSampler;\n\n// the texCoords passed in from the vertex shader.\nvarying vec2 v_texCoord;\n\n// Axial Plane\nvoid main(void) {\n    gl_FragColor = texture2D(uSampler, v_texCoord);\n}\n    ";
                 })(shaders = roi3DEditor.shaders || (roi3DEditor.shaders = {}));
             })(roi3DEditor = dilvanLab.roi3DEditor || (dilvanLab.roi3DEditor = {}));
         })(dilvanLab = usp.dilvanLab || (usp.dilvanLab = {}));
@@ -207,6 +208,8 @@ var br;
                 roi3DEditor.ALL = 3;
                 roi3DEditor.IMAGES_PER_AXIS = 4;
                 roi3DEditor.IMAGES_PER_TEXTURE = roi3DEditor.IMAGES_PER_AXIS * roi3DEditor.IMAGES_PER_AXIS;
+                roi3DEditor.LOAD_IMAGES = 0;
+                roi3DEditor.LOAD_4X4_IMAGES = 1;
                 var Point = (function () {
                     function Point(x, y, z) {
                         if (z === void 0) { z = 0; }
@@ -219,6 +222,7 @@ var br;
                 roi3DEditor.Point = Point;
                 var ImgSimpleTexture = (function () {
                     function ImgSimpleTexture(gl, width, height, filters) {
+                        this.numImgsRead = 0;
                         this.framebuffer = gl.createFramebuffer();
                         this.texture = gl.createTexture();
                         gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, this.framebuffer);
@@ -239,6 +243,12 @@ var br;
                         gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, null);
                         gl.deleteRenderbuffer(renderbuffer);
                     }
+                    ImgSimpleTexture.prototype.createCanvas = function (width, height, imgNumber) {
+                        this.canvas = document.createElement('canvas');
+                        this.canvas.width = width * roi3DEditor.IMAGES_PER_AXIS;
+                        this.canvas.height = height * roi3DEditor.IMAGES_PER_AXIS;
+                        this.numImgsRead = imgNumber;
+                    };
                     return ImgSimpleTexture;
                 })();
                 roi3DEditor.ImgSimpleTexture = ImgSimpleTexture;
@@ -339,7 +349,7 @@ var br;
                 var DEFAULT_WINDOWING_CENTER = 40;
                 var DEFAULT_WINDOWING_WIDTH = 400;
                 var WebGLViewerImpl = (function () {
-                    function WebGLViewerImpl(canvas, pref, series) {
+                    function WebGLViewerImpl(canvas, mode, pref, series) {
                         if (pref === void 0) { pref = null; }
                         if (series === void 0) { series = null; }
                         this._windowingCenter = DEFAULT_WINDOWING_CENTER;
@@ -349,9 +359,11 @@ var br;
                         this.texture = [];
                         this.numImgs = 0;
                         this._activePlane = null;
+                        this.mode = roi3DEditor.LOAD_IMAGES;
                         this.gl = roi3DEditor.GL.create(canvas);
                         if (!this.gl)
                             return;
+                        this.mode = mode;
                         var res = this.gl.getExtension("OES_texture_float");
                         if (!res)
                             alert("Float Textures not supported.");
@@ -683,15 +695,14 @@ var br;
                     WebGLViewerImpl.prototype.handleLoadedJpgTexture = function (i, imageJpg) {
                         var text = this.texture[i];
                         if (!text.isPngLoaded)
-                            this.handleLoadedJpgTextureWWW(text, imageJpg);
-                        this.loadJpgsCounter += roi3DEditor.IMAGES_PER_TEXTURE;
+                            this.handleOneLoadedJpgTexture(text, imageJpg);
                         if (i === 0)
                             this.drawImage();
                     };
-                    WebGLViewerImpl.prototype.handleLoadedJpgTextureWWW = function (imgText, imageJpg) {
+                    WebGLViewerImpl.prototype.handleOneLoadedJpgTexture = function (imgText, imageJpg) {
                         var gl = this.gl;
                         var jpgTexture = gl.createTexture();
-                        this.handleLoadedTextureWWW(jpgTexture, imageJpg);
+                        this.loadTexture(jpgTexture, imageJpg);
                         gl.bindFramebuffer(gl.FRAMEBUFFER, imgText.framebuffer);
                         gl.viewport(0, 0, imgText.width, imgText.height);
                         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -709,7 +720,7 @@ var br;
                         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
                         gl.deleteTexture(jpgTexture);
                     };
-                    WebGLViewerImpl.prototype.handleLoadedTextureWWW = function (text, textureImage) {
+                    WebGLViewerImpl.prototype.loadTexture = function (text, textureImage) {
                         var gl = this.gl;
                         gl.bindTexture(gl.TEXTURE_2D, text);
                         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -719,11 +730,14 @@ var br;
                         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
                         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textureImage);
                         gl.bindTexture(gl.TEXTURE_2D, null);
-                        this.loadCounter += roi3DEditor.IMAGES_PER_TEXTURE;
                     };
-                    WebGLViewerImpl.prototype.handleLoadedTexture = function (i, textureImage) {
-                        var text = this.texture[i].texture;
-                        this.handleLoadedTextureWWW(text, textureImage);
+                    WebGLViewerImpl.prototype.numImagesInTexture = function (i) {
+                        var size = Math.floor(this.numImgs / (roi3DEditor.IMAGES_PER_TEXTURE - 1));
+                        var left = this.numImgs % (roi3DEditor.IMAGES_PER_TEXTURE - 1);
+                        size = (left === 0 || left === 1) ? size : size + 1;
+                        if (i !== size - 1 || left == 1)
+                            return roi3DEditor.IMAGES_PER_TEXTURE;
+                        return (left == 0) ? roi3DEditor.IMAGES_PER_TEXTURE - 1 : left;
                     };
                     WebGLViewerImpl.prototype.init = function (pref, series) {
                         var rescaleSlope = series['rescaleSlope'];
@@ -771,6 +785,7 @@ var br;
                         this.planes[roi3DEditor.FRONTAL] = this.frontal;
                         this.simpleShader = WebGLViewerImpl.createProgram(gl, roi3DEditor.shaders.simpleVs, roi3DEditor.shaders.simpleFs);
                         this.jpegTransfShader = WebGLViewerImpl.createProgram(gl, roi3DEditor.shaders.simpleVs, roi3DEditor.shaders.jpegTransfFs);
+                        this.loadShader = WebGLViewerImpl.createProgram(gl, roi3DEditor.shaders.simpleVs, roi3DEditor.shaders.plainFs);
                         this.defIntVars(this.jpegTransfShader);
                         roi3DEditor.GL.setI(gl, this.jpegTransfShader, "defaultWC", this._defaultWC);
                         roi3DEditor.GL.setI(gl, this.jpegTransfShader, "defaultWW", this._defaultWW);
@@ -778,6 +793,9 @@ var br;
                         for (var i = 0; i < this.numImgs - 1; i += this.imagesPerTexture - 1) {
                             var text = new roi3DEditor.ImgTexture(gl, this.imgWidth * roi3DEditor.IMAGES_PER_AXIS, this.imgHeight * roi3DEditor.IMAGES_PER_AXIS, gl.TEXTURE_MAG_FILTER, gl.NEAREST, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
                             this.texture.push(text);
+                            if (this.mode === roi3DEditor.LOAD_IMAGES) {
+                                text.createCanvas(this.imgWidth, this.imgHeight, this.numImagesInTexture(i));
+                            }
                         }
                     };
                     WebGLViewerImpl.prototype.isImageLoaded = function (i) {
@@ -898,10 +916,49 @@ var br;
                         var image = new Image();
                         image.src = url;
                         image.crossOrigin = "Anonymous";
+                        image.onerror = function () {
+                            console.info("Error loading png....  " + image.src);
+                        };
                         image.onload = function () {
-                            var text = _this.texture[i].texture;
-                            _this.handleLoadedTextureWWW(text, image);
-                            _this.drawImage();
+                            //alert("loading: "+this.texture[i]+" - "+url);
+                            if (_this.mode === roi3DEditor.LOAD_IMAGES) {
+                                var c = Math.floor(i / (roi3DEditor.IMAGES_PER_TEXTURE - 1));
+                                var pos = i % (roi3DEditor.IMAGES_PER_TEXTURE - 1);
+                                if (c === _this.texture.length) {
+                                    c--;
+                                    pos = roi3DEditor.IMAGES_PER_TEXTURE - 1;
+                                }
+                                var posX = pos % roi3DEditor.IMAGES_PER_AXIS * _this.imgWidth;
+                                var posY = Math.floor(pos / roi3DEditor.IMAGES_PER_AXIS) * _this.imgHeight;
+                                _this.texture[c].canvas.getContext('2d').drawImage(image, posX, posY);
+                                if (pos === 0 && c !== 0) {
+                                    _this.texture[c - 1].canvas.getContext('2d').drawImage(image, (roi3DEditor.IMAGES_PER_AXIS - 1) * _this.imgWidth, (roi3DEditor.IMAGES_PER_AXIS - 1) * _this.imgHeight);
+                                    _this.texture[c - 1].numImgsRead--;
+                                    _this.loadCounter++;
+                                    if (_this.texture[c - 1].numImgsRead === 0) {
+                                        _this.loadTexture(_this.texture[c - 1].texture, _this.texture[c - 1].canvas);
+                                        _this.texture[c - 1].canvas = null;
+                                        _this.drawImage();
+                                    }
+                                }
+                                image = null;
+                                _this.texture[c].numImgsRead--;
+                                _this.loadCounter++;
+                                if (_this.texture[c].numImgsRead === 0) {
+                                    _this.loadTexture(_this.texture[c].texture, _this.texture[c].canvas);
+                                    _this.texture[c].canvas = null;
+                                    _this.drawImage();
+                                }
+                                return;
+                            }
+                            else {
+                                _this.loadTexture(_this.texture[i].texture, image);
+                                image = null;
+                                _this.loadCounter += _this.numImagesInTexture(i);
+                                if (_this.loadCounter > _this.numImgs)
+                                    _this.loadCounter = _this.numImgs;
+                                _this.drawImage();
+                            }
                         };
                     };
                     return WebGLViewerImpl;
@@ -955,8 +1012,8 @@ var br;
                 })();
                 var WebGLEditorImpl = (function (_super) {
                     __extends(WebGLEditorImpl, _super);
-                    function WebGLEditorImpl(canvas, pref, series) {
-                        _super.call(this, canvas, pref, series);
+                    function WebGLEditorImpl(canvas, mode, pref, series) {
+                        _super.call(this, canvas, mode, pref, series);
                         this.cursor = new Sphere();
                         this.cmdBuffer = new Array();
                         this.stampShader = roi3DEditor.WebGLViewerImpl.createProgram(this.gl, roi3DEditor.shaders.simpleVs, roi3DEditor.shaders.stampFs);

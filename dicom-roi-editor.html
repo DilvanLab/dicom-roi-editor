@@ -117,7 +117,8 @@ Example:
           if (!canvas) alert('Null canvas: ' + this.canvas);
           //alert(this['pref']);
           //this.editor = new br.usp.dilvanLab.roi3DEditor.WebGLViewerImpl(canvas, eval("(" + this['pref'] + ")"), eval("(" + this['series'] + ")"));
-          this.editor = new br.usp.dilvanLab.roi3DEditor.WebGLViewerImpl(canvas, pref, series);
+          this.editor = new br.usp.dilvanLab.roi3DEditor.WebGLViewerImpl(canvas, 0, pref, series);
+
           this.editor.activePlane = br.usp.dilvanLab.roi3DEditor.ALL;
 
           this.imagesPerTexture = this.editor.imagesPerTexture;

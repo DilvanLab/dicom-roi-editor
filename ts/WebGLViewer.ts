@@ -30,6 +30,9 @@ module br.usp.dilvanLab.roi3DEditor {
     export const IMAGES_PER_AXIS = 4;
     export const IMAGES_PER_TEXTURE = IMAGES_PER_AXIS * IMAGES_PER_AXIS;
 
+    export const LOAD_IMAGES = 0;
+    export const LOAD_4X4_IMAGES = 1;
+
     export class Point {
         constructor(public x:number, public y:number, public z:number=0) {}
     }
@@ -38,6 +41,9 @@ module br.usp.dilvanLab.roi3DEditor {
 
         texture:WebGLTexture;
         framebuffer:WebGLFramebuffer;
+
+        canvas:HTMLCanvasElement;
+        numImgsRead = 0;
 
         constructor(gl:WebGLRenderingContext, width:number, height:number, filters:number[]) {
 
@@ -87,6 +93,14 @@ module br.usp.dilvanLab.roi3DEditor {
             gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, null);
 
             gl.deleteRenderbuffer(renderbuffer);
+        }
+
+        createCanvas(width:number, height:number, imgNumber:number) {
+            this.canvas = document.createElement('canvas');
+            this.canvas.width = width * IMAGES_PER_AXIS;
+            this.canvas.height = height * IMAGES_PER_AXIS;
+            //document.body.appendChild(this.canvas);
+            this.numImgsRead = imgNumber;
         }
     }
 
@@ -163,7 +177,7 @@ module br.usp.dilvanLab.roi3DEditor {
         handleLoadedJpgTexture(i:number, imageJpg:HTMLImageElement):void;
         //handleLoadedJpgTexture(imgText:ImgTexture, imageJpg:HTMLImageElement):void;
         //isImageLoaded(i:number):boolean;
-        handleLoadedTexture(i:number, textureImage:HTMLImageElement):void;
+        //handleLoadedTexture(i:number, textureImage:HTMLImageElement):void;
 
         setActiveImage(plane:number, coord:number):void;
         setPlanesCoord(plane:number, x:number, y:number):void;

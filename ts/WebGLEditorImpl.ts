@@ -40,8 +40,8 @@ module br.usp.dilvanLab.roi3DEditor {
 
         private cmdBuffer = new Array<Point>();
 
-        constructor(canvas:HTMLCanvasElement, pref:Preferences, series:DicomSeriesInfo) {
-            super(canvas, pref, series);
+        constructor(canvas:HTMLCanvasElement, mode:number, pref:Preferences, series:DicomSeriesInfo) {
+            super(canvas, mode, pref, series);
             this.stampShader = WebGLViewerImpl.createProgram(this.gl, shaders.simpleVs, shaders.stampFs);
 
             this.moveShader = WebGLViewerImpl.createProgram(this.gl, shaders.simpleVs, shaders.moveFs);
