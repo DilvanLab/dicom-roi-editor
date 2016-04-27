@@ -9,7 +9,7 @@ To test component:
 3. On a browser, go to [`http://localhost:8080/components/dicom-roi-editor/demo/`](http://localhost:8080/components/dicom-roi-editor/demo/).
 4. Press the `Load Images` button.
 
-The demo can has buttons to:
+The demo has buttons to:
 
 * zoom, 
 * scroll (click on the planes to change slice location), 
