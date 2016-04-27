@@ -13,7 +13,7 @@
  *
  *     You should have received a copy of the GNU General Public License
  *     along with ePad.  If not, see <http://www.gnu.org/licenses/>.
- */
+ */ 
 
 module br.usp.dilvanLab.roi3DEditor {
 
@@ -68,7 +68,7 @@ module br.usp.dilvanLab.roi3DEditor {
          * @return an double
          */
         static parseFloat(value:string) {
-            return (value === null) ? 0 : parseFloat(value);
+            return (value) ? parseFloat(value):0;
         }
 
         /**
@@ -80,7 +80,7 @@ module br.usp.dilvanLab.roi3DEditor {
          * @return an integer
          */
         static parseInt(value:string) {
-            return (value === null) ? 0 : parseInt(value);
+            return (value) ? parseInt(value):0;
         }
 
 ///**

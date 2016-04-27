@@ -81,10 +81,10 @@ var br;
                         }
                     };
                     GL.parseFloat = function (value) {
-                        return (value === null) ? 0 : parseFloat(value);
+                        return (value) ? parseFloat(value) : 0;
                     };
                     GL.parseInt = function (value) {
-                        return (value === null) ? 0 : parseInt(value);
+                        return (value) ? parseInt(value) : 0;
                     };
                     GL.setF = function (gl, shader, name, val) {
                         gl.uniform1f(gl.getUniformLocation(shader, name), val);
@@ -162,7 +162,6 @@ var br;
                     shaders.simpleVs = "\nprecision highp float;\nprecision highp sampler2D;\nprecision highp int;\n\nattribute vec2 a_texCoord;\nattribute vec2 a_position;\n\nvarying vec2 v_texCoord;\n\nvoid main() {\n\tgl_Position = vec4(a_position, 0, 1);\n\t// pass the texCoord to the fragment shader\n   \t// The GPU will interpolate this value between points\n   \tv_texCoord = a_texCoord;\n}\n    ";
                     shaders.stampFs = "\nprecision highp float;\nprecision highp sampler2D;\nprecision highp int;\n\nuniform int imagesPerAxis;\nuniform sampler2D uDSO;\nuniform sampler2D spheres;\n\nuniform int baseInd;   //True index of the first image in this set\nuniform float dz;      //Distance between slices, in units\nuniform int cmdSize;\n//uniform float sphereX;\n//uniform float sphereY;\n//uniform float sphereZ;\n//vec3 sphe = vec3(sphereX, sphereY, sphereZ);\n\nuniform float maxX;\nconst int maxSize = 30000;\n//uniform vec4 spheres1[maxSize];\nuniform float sphereRadius; //in units\n\n// the texCoords passed in from the vertex shader.\nvarying vec2 v_texCoord;\n\nfloat square(float x) {return x*x;}\n\nvec4 getSphere(int i) {\n    float j = float(i);\n    return texture2D(spheres, vec2(mod(j,maxX)/maxX, 1.0 - floor(j/maxX)/maxX));\n}\n\n//   It took 5 seconds (4s with cube test) in the one line test (one line from\n//   the top to the botton with default cursor radius)\nbool isInsideSphere(vec3 plane) {\n    vec3 delta;\n    for(int i=0; i<maxSize; i++) {\n        if (i>=cmdSize) break;\n\n        //delta = plane-spheres1[i].xyz;\n        delta = plane-getSphere(i).xyz;\n\n        // Test first the cube where the sphere is\n        if (delta.x>sphereRadius || delta.y>sphereRadius) continue;\n\n        if (square(delta.x) + square(delta.y) <= square(sphereRadius) - square(delta.z))\n            return true;\n    }\n    return false;\n}\n\n//   Disposition of images in the 4x4 grid\n/*   0  1  2  3\n     4  5  6  7\n     8  9 10 11\n    12 13 14 15\n*/\nvoid main(void) {\n    vec2 p = v_texCoord;\n\n    // Calculate image index from point p\n    float ipa = float(imagesPerAxis);\n    float indX = ceil(p.x*ipa)-1.0;\n    if (indX<0.0) indX = 0.0;\n    float indY = ceil(p.y*ipa)-1.0;\n    if (indY<0.0) indY = 0.0;\n        float ind = (3.0-indY) * ipa + indX;\n\n    vec4 masks = texture2D(uDSO, p);\n\tvec2 p2 = vec2(fract(p.x*ipa), fract(p.y*ipa));\n\n    bool isInside = isInsideSphere(vec3(p2, (ind + float(baseInd)) * dz));\n\n    vec4 ret = vec4(0.0, 0.0, 0.0, 0.0);\n    vec4 k;\n\n    masks= floor(masks*255.0);\n    int bit = 0;\n    float power = 1.0;\n\n    for (int i = 0; i < 8; i++) {\n        k = mod(masks, 2.0); masks= floor(masks/2.0);\n        //if (i==bit) {\n            k.r = (isInside?1.0:k.r);\n        //}\n        ret += k*power;\n        power *= 2.0;\n    }\n    gl_FragColor = ret/255.0;\n}\n    ";
                     shaders.transfVs = "\nprecision highp float;\nprecision highp sampler2D;\nprecision highp int;\n\nattribute vec2 a_texCoord;\nattribute vec2 a_position;\n\nuniform vec2 u_translation;\n\nvarying vec2 v_texCoord;\n\nvoid main() {\n\tgl_Position = vec4(a_position + u_translation, 0, 1);\n\t// pass the texCoord to the fragment shader\n   \t// The GPU will interpolate this value between points\n   \tv_texCoord = a_texCoord;\n}\n    ";
-                    shaders.plainFs = "\nprecision highp float;\nprecision highp sampler2D;\n\nuniform sampler2D uSampler;\n\n// the texCoords passed in from the vertex shader.\nvarying vec2 v_texCoord;\n\n// Axial Plane\nvoid main(void) {\n    gl_FragColor = texture2D(uSampler, v_texCoord);\n}\n    ";
                 })(shaders = roi3DEditor.shaders || (roi3DEditor.shaders = {}));
             })(roi3DEditor = dilvanLab.roi3DEditor || (dilvanLab.roi3DEditor = {}));
         })(dilvanLab = usp.dilvanLab || (usp.dilvanLab = {}));
@@ -187,8 +186,7 @@ var br;
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
 ///<reference path='./DicomSeriesInfo.ts' />
 ///<reference path='./GL.ts' />
@@ -304,23 +302,6 @@ var br;
         })(dilvanLab = usp.dilvanLab || (usp.dilvanLab = {}));
     })(usp = br.usp || (br.usp = {}));
 })(br || (br = {}));
-/*
- *    Copyright (c) Dilvan A. Moreira 2015. All rights reserved.
- *    This file is part of ePad.
- *
- *     ePad is free software: you can redistribute it and/or modify
- *     it under the terms of the GNU General Public License as published by
- *     the Free Software Foundation, either version 3 of the License.
- *
- *     ePad is distributed in the hope that it will be useful,
- *     but WITHOUT ANY WARRANTY; without even the implied warranty of
- *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU General Public License for more details.
- *
- *     You should have received a copy of the GNU General Public License
- *     along with ePad.  If not, see <http://www.gnu.org/licenses/>.
- */
-///<reference path='./WebGLViewer.ts' />
 /*
  *    Copyright (c) Dilvan A. Moreira 2015. All rights reserved.
  *    This file is part of ePad.
@@ -682,6 +663,7 @@ var br;
                         return this.planes[plane].y;
                     };
                     WebGLViewerImpl.prototype.getZoom = function (plane) {
+                        //alert("pln: "+plane+" zoo: "+this.planes);
                         return this.planes[plane].zoom;
                     };
                     WebGLViewerImpl.prototype.markChanged = function () {
@@ -740,6 +722,7 @@ var br;
                         return (left == 0) ? roi3DEditor.IMAGES_PER_TEXTURE - 1 : left;
                     };
                     WebGLViewerImpl.prototype.init = function (pref, series) {
+                        //alert("ONLY: "+ series.pixelSpacing+"   sliSpac: "+ series.sliceThickness)
                         var rescaleSlope = series['rescaleSlope'];
                         if (!rescaleSlope) {
                             rescaleSlope = "1.0";
@@ -785,7 +768,6 @@ var br;
                         this.planes[roi3DEditor.FRONTAL] = this.frontal;
                         this.simpleShader = WebGLViewerImpl.createProgram(gl, roi3DEditor.shaders.simpleVs, roi3DEditor.shaders.simpleFs);
                         this.jpegTransfShader = WebGLViewerImpl.createProgram(gl, roi3DEditor.shaders.simpleVs, roi3DEditor.shaders.jpegTransfFs);
-                        this.loadShader = WebGLViewerImpl.createProgram(gl, roi3DEditor.shaders.simpleVs, roi3DEditor.shaders.plainFs);
                         this.defIntVars(this.jpegTransfShader);
                         roi3DEditor.GL.setI(gl, this.jpegTransfShader, "defaultWC", this._defaultWC);
                         roi3DEditor.GL.setI(gl, this.jpegTransfShader, "defaultWW", this._defaultWW);
@@ -866,8 +848,9 @@ var br;
                         gl.activeTexture(gl.TEXTURE1);
                         gl.bindTexture(gl.TEXTURE_2D, plane.imgTexture.dso);
                         roi3DEditor.GL.setI(gl, this.simpleShader, "uDSO", 1);
-                        var alpha = (plane === this.axial) ? 1 : (this.imgWidth * this.pixelSpacing) / (this._sliceSpacing * this.numImgs);
-                        var beta = ((alpha - 1.0) / (2.0 * alpha));
+                        var alpha = (plane === this.axial) ? 1 : this.xCorrection;
+                        var beta = (alpha - 1.0) / (2.0 * alpha);
+                        console.log('Careful alpha: ' + alpha + ' beta: ' + beta);
                         var lineX = 0, lineY = 0;
                         roi3DEditor.GL.setF(gl, this.simpleShader, "zoom", plane.zoom);
                         if (plane === this.axial) {
@@ -889,9 +872,17 @@ var br;
                         gl.drawArrays(gl.TRIANGLES, 0, 6);
                         gl.deleteBuffer(zoomBuffer);
                     };
+                    Object.defineProperty(WebGLViewerImpl.prototype, "xCorrection", {
+                        get: function () {
+                            var alpha = (this.imgWidth * this.pixelSpacing) / (this._sliceSpacing * this.numImgs);
+                            return alpha - 1;
+                        },
+                        enumerable: true,
+                        configurable: true
+                    });
                     WebGLViewerImpl.prototype.xCoord = function (x) {
-                        var dz = this._sliceSpacing / (this.imgWidth * this.pixelSpacing);
-                        return (x - 0.5) * (this.numImgs * dz) + 0.5;
+                        return x;
+                        return (x - 0.5) / (this.xCorrection + 1) + 0.5;
                     };
                     WebGLViewerImpl.prototype.delete = function () {
                     };
@@ -968,24 +959,9 @@ var br;
         })(dilvanLab = usp.dilvanLab || (usp.dilvanLab = {}));
     })(usp = br.usp || (br.usp = {}));
 })(br || (br = {}));
-/*
- *    Copyright (c) Dilvan A. Moreira 2015. All rights reserved.
- *    This file is part of ePad.
- *
- *     ePad is free software: you can redistribute it and/or modify
- *     it under the terms of the GNU General Public License as published by
- *     the Free Software Foundation, either version 3 of the License.
- *
- *     ePad is distributed in the hope that it will be useful,
- *     but WITHOUT ANY WARRANTY; without even the implied warranty of
- *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU General Public License for more details.
- *
- *     You should have received a copy of the GNU General Public License
- *     along with ePad.  If not, see <http://www.gnu.org/licenses/>.
+/**
+ * Created by dilvan on 4/17/16.
  */
-///<reference path='./WebGLEditor.ts'/>
-///<reference path='./WebGLViewerImpl.ts'/>
 var br;
 (function (br) {
     var usp;
@@ -994,230 +970,296 @@ var br;
         (function (dilvanLab) {
             var roi3DEditor;
             (function (roi3DEditor) {
-                var Sphere = (function () {
-                    function Sphere() {
-                        this.x = 0;
-                        this.y = 0;
-                        this.radius = 0;
+                var Context = (function () {
+                    function Context(viewer) {
+                        this.viewer = viewer;
+                        this.mouse = { x: 0, y: 0 };
+                        this.actual = { x: 0, y: 0 };
+                        this.mouseIsDown = false;
+                        this.tool = 'gradient';
                     }
-                    Object.defineProperty(Sphere.prototype, "visible", {
-                        get: function () {
-                            return !(this.radius === 0 || this.x < 0 ||
-                                this.x > 1.0 || this.y < 0 || this.y > 1.0);
-                        },
-                        enumerable: true,
-                        configurable: true
-                    });
-                    return Sphere;
-                })();
-                var WebGLEditorImpl = (function (_super) {
-                    __extends(WebGLEditorImpl, _super);
-                    function WebGLEditorImpl(canvas, mode, pref, series) {
-                        _super.call(this, canvas, mode, pref, series);
-                        this.cursor = new Sphere();
-                        this.cmdBuffer = new Array();
-                        this.stampShader = roi3DEditor.WebGLViewerImpl.createProgram(this.gl, roi3DEditor.shaders.simpleVs, roi3DEditor.shaders.stampFs);
-                        this.moveShader = roi3DEditor.WebGLViewerImpl.createProgram(this.gl, roi3DEditor.shaders.simpleVs, roi3DEditor.shaders.moveFs);
-                    }
-                    WebGLEditorImpl.prototype.createSpheresTexture = function (size, array) {
-                        var gl = this.gl;
-                        var framebuffer = gl.createFramebuffer();
-                        var texture = gl.createTexture();
-                        gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-                        gl.bindTexture(gl.TEXTURE_2D, texture);
-                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-                        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, size, 0, gl.RGBA, gl.FLOAT, new Float32Array(array));
-                        gl.deleteFramebuffer(framebuffer);
-                        return texture;
+                    Context.prototype.getMousePos = function (canvas, event) {
+                        var rect = canvas.getBoundingClientRect();
+                        return {
+                            x: event.clientX - rect.left,
+                            y: event.clientY - rect.top
+                        };
                     };
-                    WebGLEditorImpl.prototype.genPlane = function (plane) {
-                        _super.prototype.genPlane.call(this, plane);
-                        if (!plane.dsoChanged)
-                            return;
-                        var gl = this.gl;
-                        var text = new roi3DEditor.ImgSimpleTexture(gl, this.imgWidth, this.imgHeight, [gl.TEXTURE_MAG_FILTER, gl.NEAREST,
-                            gl.TEXTURE_MIN_FILTER, gl.NEAREST]);
-                        if (plane === this.axial)
-                            this.genAxial(text, 1);
-                        else
-                            this.genPlane1(plane, text, 1);
-                        gl.deleteTexture(plane.imgTexture.dso);
-                        plane.imgTexture.dso = text.texture;
-                        text.texture = null;
-                        gl.deleteFramebuffer(text.framebuffer);
-                        plane.dsoChanged = false;
-                    };
-                    Object.defineProperty(WebGLEditorImpl.prototype, "cursorRadius", {
-                        get: function () { return this.cursor.radius; },
-                        set: function (radius) { this.cursor.radius = radius; },
-                        enumerable: true,
-                        configurable: true
-                    });
-                    WebGLEditorImpl.prototype.isInRange = function (x) { return x >= 0 && x <= 1; };
-                    WebGLEditorImpl.prototype.showSphere = function () {
-                        if (!this.isInRange(this.cursor.x) || !this.isInRange(this.cursor.y) || !this.isInRange(this.cursor.radius))
-                            return;
-                        var gl = this.gl;
-                        gl.useProgram(this.moveShader);
-                        var dz = this.sliceSpacing / (this.imgWidth * this.pixelSpacing);
-                        roi3DEditor.GL.setF(gl, this.moveShader, "dz", dz);
-                        roi3DEditor.GL.setF(gl, this.moveShader, "sphereRadius", this.cursor.radius);
-                        var pt = this.xyzCoord(this.cursor);
-                        if (this.cmdBuffer.indexOf(pt) === -1)
-                            this.cmdBuffer.push(this.xyzCoord(this.cursor));
-                        roi3DEditor.GL.setF(gl, this.moveShader, "sphereY", this.cursor.y);
-                        if (this.cursor.plane === this.axial) {
-                            roi3DEditor.GL.setF(gl, this.moveShader, "sphereX", this.cursor.x);
-                            roi3DEditor.GL.setF(gl, this.moveShader, "dy", 1);
-                        }
-                        else {
-                            roi3DEditor.GL.setF(gl, this.moveShader, "sphereX", this.xCoord(this.cursor.x));
-                            roi3DEditor.GL.setF(gl, this.moveShader, "dy", this.numImgs * dz);
-                        }
-                        this.createUntBuf(this.moveShader, "a_position", -1.0, -1.0, 1.0, 1.0);
-                        this.createUntBuf(this.moveShader, "a_texCoord", 0.0, 0.0, 1.0, 1.0);
-                        roi3DEditor.GL.setI(gl, this.moveShader, "imagesPerAxis", roi3DEditor.IMAGES_PER_AXIS);
-                        var text = new roi3DEditor.ImgSimpleTexture(gl, this.imgWidth, this.imgHeight, [gl.TEXTURE_MAG_FILTER, gl.NEAREST,
-                            gl.TEXTURE_MIN_FILTER, gl.NEAREST]);
-                        gl.bindFramebuffer(gl.FRAMEBUFFER, text.framebuffer);
-                        gl.viewport(0, 0, this.imgWidth, this.imgHeight);
-                        gl.activeTexture(gl.TEXTURE1);
-                        gl.bindTexture(gl.TEXTURE_2D, this.cursor.plane.imgTexture.dso);
-                        roi3DEditor.GL.setI(gl, this.moveShader, "uDSO", 1);
-                        gl.drawArrays(gl.TRIANGLES, 0, 6);
-                        gl.bindTexture(gl.TEXTURE_2D, text.texture);
-                        gl.generateMipmap(gl.TEXTURE_2D);
-                        gl.bindTexture(gl.TEXTURE_2D, null);
-                        gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-                        this.cursor.plane.imgTexture.dso = text.texture;
-                        text.texture = null;
-                        gl.deleteFramebuffer(text.framebuffer);
-                    };
-                    WebGLEditorImpl.prototype.setCursorCenter = function (plane, x, y) {
-                        var pt = this.toUnits(plane, x, y);
-                        this.cursor.x = pt.x;
-                        this.cursor.y = pt.y;
-                        this.cursor.plane = this.planes[plane];
-                    };
-                    WebGLEditorImpl.prototype.delete = function () {
-                        _super.prototype.delete.call(this);
-                    };
-                    WebGLEditorImpl.prototype.showPlane = function (plane, scale, trans) {
+                    Context.prototype.initDrawingHandlers = function () {
                         var _this = this;
-                        var fcts = [];
-                        for (var _i = 3; _i < arguments.length; _i++) {
-                            fcts[_i - 3] = arguments[_i];
-                        }
-                        var gl = this.gl;
-                        var fcts2 = new Array(fcts.length + 1);
-                        for (var i = 0; i < fcts.length; i++)
-                            fcts2[i] = fcts[i];
-                        fcts2[fcts.length] = function () {
-                            if ((_this._activePlane || _this.cursor.plane === plane) && _this.cursor.visible) {
-                                roi3DEditor.GL.setF(gl, _this.simpleShader, "sphereX", _this.cursor.x);
-                                roi3DEditor.GL.setF(gl, _this.simpleShader, "sphereY", _this.cursor.y);
-                                roi3DEditor.GL.setF(gl, _this.simpleShader, "sphereRadius", _this.cursor.radius);
+                        var vi = this.viewer;
+                        var drawing = vi.gl.canvas;
+                        var modes = {};
+                        modes['zoom'] = new ZoomMode(this);
+                        modes['scroll'] = new ScrollMode(this);
+                        modes['gradient'] = new GradientMode(this);
+                        modes['move'] = new MoveMode(this);
+                        drawing.onmousemove = function (event) {
+                            if (!_this.mouseIsDown)
+                                return;
+                            _this.mouse = _this.getMousePos(drawing, event);
+                            event.preventDefault();
+                            if (event.shiftKey) {
+                                modes['zoom'].onmousemove(event);
                             }
+                            else if (modes[_this.tool])
+                                modes[_this.tool].onmousemove(event);
+                        };
+                        drawing.onmousedown = function (event) {
+                            _this.mouse = _this.getMousePos(drawing, event);
+                            _this.actual.x = _this.mouse.x;
+                            _this.actual.y = _this.mouse.y;
+                            if (_this.mouseIsDown)
+                                return;
+                            _this.mouseIsDown = true;
+                            if (event.shiftKey) {
+                                _this.tool = 'zoom';
+                            }
+                            else if (event.metaKey) {
+                                _this.tool = 'move';
+                            }
+                            else if (modes[_this.tool])
+                                modes[_this.tool].onmousedown(event);
                             else {
-                                roi3DEditor.GL.setF(gl, _this.simpleShader, "sphereX", 0);
-                                roi3DEditor.GL.setF(gl, _this.simpleShader, "sphereY", 0);
-                                roi3DEditor.GL.setF(gl, _this.simpleShader, "sphereRadius", 0);
                             }
                         };
-                        _super.prototype.showPlane.call(this, plane, scale, trans, fcts2);
+                        drawing.ondblclick = function (event) {
+                            modes[_this.tool].ondblclick(event);
+                        };
+                        drawing.onmouseup = function (event) {
+                            _this.mouse = _this.getMousePos(drawing, event);
+                            if (!_this.mouseIsDown)
+                                return;
+                            _this.mouseIsDown = false;
+                            if (event.shiftKey || event.metaKey) {
+                                return;
+                            }
+                            else if (modes[_this.tool])
+                                modes[_this.tool].onmouseup(event);
+                        };
+                        drawing.onwheel = function (event) {
+                            //if (tool != null && tool == Tool.zoomTool) {
+                            //    // do some zooming
+                            //    drawing.zoom(event.getDeltaY());
+                            event.preventDefault();
+                            if ((_this.tool === 'add' || _this.tool == 'subtract') && event.shiftKey) {
+                                modes['threeDDrawTool'].onmousewheel(event);
+                                return;
+                            }
+                            modes['scroll'].onmousewheel(event);
+                        };
+                        drawing.onkeydown = function (event) {
+                            event.preventDefault();
+                            modes['zoom'].onkeydown(event);
+                        };
+                        drawing.onmouseout = function (event) {
+                            if (_this.tool == 'threeDDraw')
+                                modes['threeDDraw'].onmouseout(event);
+                        };
                     };
-                    WebGLEditorImpl.prototype.stampSphere = function () {
-                        if (!this.isInRange(this.cursor.x) || !this.isInRange(this.cursor.y) || !this.isInRange(this.cursor.radius))
-                            return;
-                        var gl = this.gl;
-                        gl.useProgram(this.stampShader);
-                        var dz = this.sliceSpacing / (this.imgWidth * this.pixelSpacing);
-                        roi3DEditor.GL.setF(gl, this.stampShader, "dz", dz);
-                        roi3DEditor.GL.setF(gl, this.stampShader, "sphereRadius", this.cursor.radius);
-                        var maxZ = -Number.MAX_VALUE;
-                        var minZ = Number.MAX_VALUE;
-                        var size;
-                        for (size = 2; size * size < this.cmdBuffer.length; size *= 2)
-                            ;
-                        var spheres = new Array(size * size * 4);
-                        for (var i = 0; i < this.cmdBuffer.length; i++) {
-                            var j = i * 4;
-                            spheres[j] = this.cmdBuffer[i].x;
-                            spheres[j + 1] = this.cmdBuffer[i].y;
-                            spheres[j + 2] = this.cmdBuffer[i].z;
-                            spheres[j + 3] = this.cursor.radius;
-                            maxZ = (spheres[j + 2] > maxZ) ? spheres[j + 2] : maxZ;
-                            minZ = (spheres[j + 2] < minZ) ? spheres[j + 2] : minZ;
-                        }
-                        roi3DEditor.GL.setF(gl, this.stampShader, "cmdSize", this.cmdBuffer.length);
-                        var sphereTex = this.createSpheresTexture(size, spheres);
-                        roi3DEditor.GL.setF(gl, this.stampShader, "maxX", size - 1);
-                        this.cmdBuffer.length = 0;
-                        var a = Math.floor(Math.floor((minZ - this.cursor.radius) / dz) / (roi3DEditor.IMAGES_PER_TEXTURE - 1));
-                        var b = Math.ceil(Math.ceil((maxZ + this.cursor.radius) / dz) / (roi3DEditor.IMAGES_PER_TEXTURE - 1));
-                        a = a < 0 ? 0 : a;
-                        b = b > this.texture.length ? this.texture.length : b;
-                        this.createUntBuf(this.stampShader, "a_position", -1.0, -1.0, 1.0, 1.0);
-                        this.createUntBuf(this.stampShader, "a_texCoord", 0.0, 0.0, 1.0, 1.0);
-                        roi3DEditor.GL.setI(gl, this.stampShader, "imagesPerAxis", roi3DEditor.IMAGES_PER_AXIS);
-                        for (var i = a; i < b; i++) {
-                            var text = new roi3DEditor.ImgSimpleTexture(gl, this.imgWidth * roi3DEditor.IMAGES_PER_AXIS, this.imgHeight * roi3DEditor.IMAGES_PER_AXIS, [gl.TEXTURE_MAG_FILTER, gl.NEAREST,
-                                gl.TEXTURE_MIN_FILTER, gl.NEAREST]);
-                            gl.bindFramebuffer(gl.FRAMEBUFFER, text.framebuffer);
-                            gl.viewport(0, 0, this.texture[i].width, this.texture[i].height);
-                            gl.activeTexture(gl.TEXTURE2);
-                            gl.bindTexture(gl.TEXTURE_2D, sphereTex);
-                            roi3DEditor.GL.setI(gl, this.stampShader, "spheres", 2);
-                            gl.activeTexture(gl.TEXTURE1);
-                            gl.bindTexture(gl.TEXTURE_2D, this.texture[i].dso);
-                            roi3DEditor.GL.setI(gl, this.stampShader, "uDSO", 1);
-                            roi3DEditor.GL.setI(gl, this.stampShader, "baseInd", i * (roi3DEditor.IMAGES_PER_TEXTURE - 1));
-                            gl.drawArrays(gl.TRIANGLES, 0, 6);
-                            gl.bindTexture(gl.TEXTURE_2D, text.texture);
-                            gl.generateMipmap(gl.TEXTURE_2D);
-                            gl.bindTexture(gl.TEXTURE_2D, null);
-                            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-                            gl.deleteTexture(this.texture[i].dso);
-                            this.texture[i].dso = text.texture;
-                            text.texture = null;
-                            gl.deleteFramebuffer(text.framebuffer);
-                        }
-                        gl.deleteTexture(sphereTex);
-                        this.planes[roi3DEditor.AXIAL].dsoChanged = true;
-                        this.planes[roi3DEditor.FRONTAL].dsoChanged = true;
-                        this.planes[roi3DEditor.SAGITTAL].dsoChanged = true;
-                    };
-                    WebGLEditorImpl.prototype.xyzCoord = function (cursor) {
-                        var x1 = cursor.x;
-                        var y1 = cursor.y;
-                        var plane = cursor.plane;
-                        var dz = this.sliceSpacing / (this.imgWidth * this.pixelSpacing);
-                        var x, y, z;
-                        if (plane === this.axial) {
-                            x = x1;
-                            y = y1;
-                            z = Math.round(this.axial.imgCoord * this.numImgs) * dz;
-                        }
-                        else if (plane === this.sagittal) {
-                            x = this.sagittal.imgCoord;
-                            y = (1.0 - x1 - 0.5) * this.numImgs * dz + 0.5;
-                            z = (1 - y1) * this.numImgs * dz;
-                        }
-                        else if (plane === this.frontal) {
-                            x = (x1 - 0.5) * this.numImgs * dz + 0.5;
-                            y = this.frontal.imgCoord;
-                            z = (1 - y1) * this.numImgs * dz;
+                    return Context;
+                })();
+                roi3DEditor.Context = Context;
+                var Mode = (function () {
+                    function Mode(context) {
+                        this.context = context;
+                        this.LEFT_ARROW = 37;
+                        this.UP_ARROW = 38;
+                        this.RIGHT_ARROW = 39;
+                        this.DOWN_ARROW = 40;
+                        this.viewer = context.viewer;
+                    }
+                    Mode.prototype.whichPlane = function (event) {
+                        var canvas = this.viewer.gl.canvas;
+                        if (this.viewer.activePlane == roi3DEditor.ALL) {
+                            var pos = this.context.getMousePos(canvas, event);
+                            console.log('getPlane: ' + pos.x + ' ' + pos.y + ' canvas: ' + canvas.width + ' ' + canvas.height);
+                            if (pos.x < canvas.width / 2 && pos.y < canvas.height / 2)
+                                return roi3DEditor.AXIAL;
+                            if (pos.x > canvas.width / 2 && pos.y > canvas.height / 2)
+                                return -1;
+                            if (pos.x > canvas.width / 2)
+                                return roi3DEditor.FRONTAL;
+                            if (pos.y > canvas.height / 2)
+                                return roi3DEditor.SAGITTAL;
+                            return -1;
                         }
                         else
-                            throw new Error("Unknown plane for sphere criation.");
-                        return new roi3DEditor.Point(x, y, z);
+                            return this.viewer.activePlane;
                     };
-                    return WebGLEditorImpl;
-                })(roi3DEditor.WebGLViewerImpl);
-                roi3DEditor.WebGLEditorImpl = WebGLEditorImpl;
+                    Mode.prototype.getMouse = function (event) {
+                        var rect = this.viewer.gl.canvas.getBoundingClientRect();
+                        var ret = {
+                            x: event.clientX - rect.left,
+                            y: event.clientY - rect.top
+                        };
+                        if (this.viewer.activePlane == roi3DEditor.ALL) {
+                            var x = this.viewer.gl.canvas.width / 2;
+                            var y = this.viewer.gl.canvas.height / 2;
+                            if (ret.x > x)
+                                ret.x = (ret.x - x);
+                            if (ret.y > y)
+                                ret.y = (ret.y - y);
+                        }
+                        console.log('mouse: ' + ret.x + ' ' + ret.y);
+                        return ret;
+                    };
+                    Mode.prototype.setWindowingValues = function (center, width) {
+                        //if (spWebGL == null) return;
+                        if (center == 0 && width == 0) {
+                            center = this.viewer.defaultWC;
+                            width = this.viewer.defaultWW;
+                        }
+                        this.viewer.windowingCenter = center;
+                        this.viewer.windowingWidth = width;
+                    };
+                    Mode.prototype.onkeydown = function (event) { };
+                    Mode.prototype.onmousedown = function (event) { };
+                    Mode.prototype.onmousemove = function (event) { };
+                    Mode.prototype.onmouseout = function (event) { };
+                    Mode.prototype.onmouseup = function (event) { };
+                    Mode.prototype.onmousewheel = function (event) { };
+                    Mode.prototype.ondblclick = function (event) {
+                        if (this.viewer.activePlane == roi3DEditor.ALL) {
+                            var plane = this.whichPlane(event);
+                            this.viewer.activePlane = plane;
+                        }
+                        else
+                            this.viewer.activePlane = roi3DEditor.ALL;
+                        this.viewer.drawImage();
+                    };
+                    return Mode;
+                })();
+                var GradientMode = (function (_super) {
+                    __extends(GradientMode, _super);
+                    function GradientMode(context) {
+                        _super.call(this, context);
+                    }
+                    GradientMode.prototype.onmousedown = function (event) {
+                    };
+                    GradientMode.prototype.onmousemove = function (event) {
+                        if (!this.context.mouseIsDown)
+                            return;
+                        var deltaWW = ((event.movementX * 4) / this.viewer.gl.canvas.width) * this.viewer.defaultWW;
+                        var deltaWC = ((event.movementY * 4) / this.viewer.gl.canvas.height) * this.viewer.defaultWC;
+                        this.setWindowingValues(this.viewer.windowingCenter + deltaWC, this.viewer.windowingWidth + deltaWW);
+                        this.viewer.drawImage();
+                    };
+                    GradientMode.prototype.onmouseup = function (event) {
+                    };
+                    return GradientMode;
+                })(Mode);
+                var MoveMode = (function (_super) {
+                    __extends(MoveMode, _super);
+                    function MoveMode(context) {
+                        _super.call(this, context);
+                    }
+                    MoveMode.prototype.onmousedown = function (event) {
+                    };
+                    MoveMode.prototype.onmousemove = function (event) {
+                        //if (!this.context.mouseIsDown) return
+                        var plane = this.whichPlane(event);
+                        if (plane == -1)
+                            return;
+                        var deltaX = this.viewer.pixels2Units(plane, this.context.mouse.x - this.context.actual.x);
+                        var deltaY = -this.viewer.pixels2Units(plane, this.context.mouse.y - this.context.actual.y);
+                        if (this.viewer.activePlane == 3) {
+                            deltaX = deltaX * 2;
+                            deltaY = deltaY * 2;
+                        }
+                        this.viewer.setX(plane, this.viewer.getX(plane) - deltaX);
+                        this.viewer.setY(plane, this.viewer.getY(plane) - deltaY);
+                        this.viewer.drawImage();
+                        this.context.actual.x = this.context.mouse.x;
+                        this.context.actual.y = this.context.mouse.y;
+                    };
+                    MoveMode.prototype.onmouseup = function (event) {
+                    };
+                    return MoveMode;
+                })(Mode);
+                var ScrollMode = (function (_super) {
+                    __extends(ScrollMode, _super);
+                    function ScrollMode(context) {
+                        _super.call(this, context);
+                    }
+                    ScrollMode.prototype.resetSlider = function () {
+                    };
+                    ScrollMode.prototype.onmousedown = function (event) {
+                        //if (spWebGL == null) return;
+                        var plane = this.whichPlane(event);
+                        if (plane == -1)
+                            return;
+                        var mouse = this.getMouse(event);
+                        this.resetSlider();
+                        this.viewer.setPlanesCoord(plane, mouse.x, mouse.y);
+                        this.viewer.drawImage();
+                    };
+                    ScrollMode.prototype.onmousemove = function (event) {
+                        var plane = this.whichPlane(event);
+                        if (plane == -1)
+                            return;
+                        var mouse = this.getMouse(event);
+                        this.resetSlider();
+                        this.viewer.setPlanesCoord(plane, mouse.x, mouse.y);
+                        this.viewer.drawImage();
+                    };
+                    ScrollMode.prototype.onmousewheel = function (event) {
+                        //if (spWebGL == null) return;
+                        var plane = this.whichPlane(event);
+                        if (plane == -1)
+                            return;
+                        var plane2Act = (this.viewer.activePlane == roi3DEditor.ALL) ? plane : this.viewer.activePlane;
+                        var i = Math.max(Math.min(this.viewer.getImageCoord(plane2Act) + (event.deltaY > 0 ? 1.0 / this.viewer.imageNumber : -1.0 / this.viewer.imageNumber), 1), 0);
+                        this.viewer.setActiveImage(plane2Act, i);
+                        this.viewer.drawImage();
+                    };
+                    return ScrollMode;
+                })(Mode);
+                var ZoomMode = (function (_super) {
+                    __extends(ZoomMode, _super);
+                    function ZoomMode(context) {
+                        _super.call(this, context);
+                    }
+                    ZoomMode.prototype.onkeydown = function (event) {
+                        var zoom;
+                        var key = event.charCode;
+                        alert('Key event: ' + key);
+                        switch (key) {
+                            case this.UP_ARROW:
+                                zoom = this.viewer.getZoom(roi3DEditor.AXIAL) / 0.9;
+                                this.viewer.setZoom(roi3DEditor.AXIAL, zoom);
+                                break;
+                            case this.DOWN_ARROW:
+                                zoom = this.viewer.getZoom(roi3DEditor.AXIAL) * 0.9;
+                                this.viewer.setZoom(roi3DEditor.AXIAL, zoom);
+                                break;
+                            case this.RIGHT_ARROW:
+                                var i = Math.max(Math.min(this.viewer.getImageCoord(roi3DEditor.AXIAL) + (1.0 / this.viewer.imageNumber), 1), 0);
+                                this.viewer.setActiveImage(roi3DEditor.AXIAL, i);
+                                break;
+                            case this.LEFT_ARROW:
+                                i = Math.max(Math.min(this.viewer.getImageCoord(roi3DEditor.AXIAL) - (1.0 / this.viewer.imageNumber), 1), 0);
+                                this.viewer.setActiveImage(roi3DEditor.AXIAL, i);
+                                break;
+                        }
+                        this.viewer.drawImage();
+                    };
+                    ZoomMode.prototype.onmousedown = function (event) {
+                    };
+                    ZoomMode.prototype.onmousemove = function (event) {
+                        if (!this.context.mouseIsDown)
+                            return;
+                        var plane = this.whichPlane(event);
+                        var zoom = this.viewer.getZoom(plane);
+                        var delta = (event.movementX + event.movementY) / 4;
+                        zoom = zoom + (delta / this.viewer.gl.canvas.width);
+                        this.viewer.setZoom(plane, zoom);
+                        this.viewer.drawImage();
+                    };
+                    ZoomMode.prototype.onmouseup = function (event) {
+                    };
+                    return ZoomMode;
+                })(Mode);
             })(roi3DEditor = dilvanLab.roi3DEditor || (dilvanLab.roi3DEditor = {}));
         })(dilvanLab = usp.dilvanLab || (usp.dilvanLab = {}));
     })(usp = br.usp || (br.usp = {}));

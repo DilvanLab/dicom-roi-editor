@@ -38,7 +38,7 @@ module br.usp.dilvanLab.roi3DEditor {
         private stampShader:WebGLProgram;
         private moveShader:WebGLProgram;
 
-        private cmdBuffer = new Array<Point>();
+        private cmdBuffer = new Array<Point>(); 
 
         constructor(canvas:HTMLCanvasElement, mode:number, pref:Preferences, series:DicomSeriesInfo) {
             super(canvas, mode, pref, series);

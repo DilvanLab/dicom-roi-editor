@@ -574,19 +574,19 @@ void main() {
 }
     `;
 
-    export const plainFs =
-    `
-precision highp float;
-precision highp sampler2D;
-
-uniform sampler2D uSampler;
-
-// the texCoords passed in from the vertex shader.
-varying vec2 v_texCoord;
-
-// Axial Plane
-void main(void) {
-    gl_FragColor = texture2D(uSampler, v_texCoord);
-}
-    `
+//    export const plainFs =
+//    `
+//precision highp float;
+//precision highp sampler2D;
+//
+//uniform sampler2D uSampler;
+//
+//// the texCoords passed in from the vertex shader.
+//varying vec2 v_texCoord;
+//
+//// Axial Plane
+//void main(void) {
+//    gl_FragColor = texture2D(uSampler, v_texCoord);
+//}
+//    `
 }

@@ -23,11 +23,10 @@
     "/demo/"
   ],
   "dependencies": {
-    "polymer": "Polymer/polymer#^1.0.0",
-    "polymer-ts": "~0.1.15"
+    "polymer": "Polymer/polymer#^1.4.0",
+    "polymer-ts": "~0.1.19"
   },
   "devDependencies": {
-    "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
     "web-component-tester": "*"
   }
 }

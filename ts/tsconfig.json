@@ -11,7 +11,7 @@
     "rootDir": ".",
     "sourceMap": true
   },
-  "files": ["WebGLEditorImpl.ts"]
+  "files": ["Webgl.ts"]
 }
 
 

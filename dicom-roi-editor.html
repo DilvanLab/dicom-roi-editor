@@ -1,4 +1,19 @@
+<!--
+    Copyright (c) Dilvan A. Moreira 2015. All rights reserved.
+    This file is part of ePad.
 
+     ePad is free software: you can redistribute it and/or modify
+     it under the terms of the GNU General Public License as published by
+     the Free Software Foundation, either version 3 of the License.
+
+     ePad is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     GNU General Public License for more details.
+
+     You should have received a copy of the GNU General Public License
+     along with ePad.  If not, see <http://www.gnu.org/licenses/>.
+-->
 <link rel="import" href="../polymer/polymer.html">
 
 <!--
@@ -45,9 +60,7 @@ Example:
 -->
 <dom-module id="dicom-roi-editor">
 
-  <style>
-  </style>
-
+  <style> </style>
   <template>
     <content></content>
   </template>
@@ -78,13 +91,16 @@ Example:
           windowingWidth: {type: Number, observed: '_windowingWidth(oldValue, newValue);'},
           activePlane: {type: Number, observed: '_activePlane(oldValue, newValue);'},
 
-          editor: {type: Object, readonly: true }
+          editor: {type: Object, readonly: true },
+          context: {type: Object, readonly: true}
       },
       behaviors: [],
 
       attached: function () {
           // `attached` fires once the element and its parents have been inserted
           // into a document.
+
+          //alert("PisSp: "+this.series);
 
           if (this.pref && this.series) {
               this.init(eval("(" + this.pref + ")"), eval("(" + this.series + ")"));
@@ -113,10 +129,13 @@ Example:
       },
 
       init: function(pref, series){
+          //alert("PisSp: "+series.pixelSpacing+"   sliSpac: "+ series.sliceThickness)
+          //alert("PisSp: "+series.pixelSpacing+"   sliSpac: "+ series.sliceThickness)
+
           var canvas = document.querySelector(this.canvas);
           if (!canvas) alert('Null canvas: ' + this.canvas);
           //alert(this['pref']);
-          //this.editor = new br.usp.dilvanLab.roi3DEditor.WebGLViewerImpl(canvas, eval("(" + this['pref'] + ")"), eval("(" + this['series'] + ")"));
+          //this.editor = new br.usp.dilvanLab.roi3DEditor.WebGLViewerImpl(canvas, 1, eval("(" + this['pref'] + ")"), eval("(" + this['series'] + ")"));
           this.editor = new br.usp.dilvanLab.roi3DEditor.WebGLViewerImpl(canvas, 0, pref, series);
 
           this.editor.activePlane = br.usp.dilvanLab.roi3DEditor.ALL;
@@ -125,9 +144,12 @@ Example:
           this.defaultWC = this.editor.defaultWC;
           this.defaultWW = this.editor.defaultWW;
 
-          this.windowingCenter = this.editor.windowingCenter;
+          this.windowingCenter = this.editor.windowingCenter ;
           this.windowingWidth = this.editor.windowingWidth;
-          this.activePlane = this.ALL;
+          this.activePlane = this.SAGITTAL;
+
+          this.editor.context = new br.usp.dilvanLab.roi3DEditor.Context(this.editor);
+          this.editor.context.initDrawingHandlers()
       },
 
       /**
@@ -175,4 +197,3 @@ Example:
   });
 
 </script>
-

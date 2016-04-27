@@ -155,6 +155,8 @@ module br.usp.dilvanLab.roi3DEditor {
      * Created by dilvan on 11/10/14.
      */
     export interface WebGLViewer {
+        //const AXIAL:number = 0;
+
         windowingWidth:number;
         windowingCenter:number;
         imagesLoaded:boolean;

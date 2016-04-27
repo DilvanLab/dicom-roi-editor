@@ -90,19 +90,20 @@ module br.usp.dilvanLab.roi3DEditor {
         protected simpleShader:WebGLProgram;
 
         private jpegTransfShader:WebGLProgram;
-        private loadShader:WebGLProgram;
+        //private loadShader:WebGLProgram;
         private dy:number;
 
         private _defaultWW:number;
         private _defaultWC:number;
-        private rescaleSlope:number;
+        private rescaleSlope:number; 
         private rescaleIntercept:number;
         private shifting:number;
-
+ 
         protected imgWidth:number;
         protected imgHeight:number;
 
-        protected gl:WebGLRenderingContext;
+        // TODO: Verify if it's better to make canvas public
+                  gl:WebGLRenderingContext;
         protected pixelSpacing:number;
         private _sliceSpacing:number;
 
@@ -122,6 +123,8 @@ module br.usp.dilvanLab.roi3DEditor {
             if (pref && series)
                 this.init(pref, series);
         }
+        
+        
 
         //@Override
         get sliceSpacing() {
@@ -414,6 +417,8 @@ module br.usp.dilvanLab.roi3DEditor {
 
         //@Override
         getZoom(plane:number) {
+            //alert("pln: "+plane+" zoo: "+this.planes);
+
             return this.planes[plane].zoom;
         }
 
@@ -575,6 +580,7 @@ module br.usp.dilvanLab.roi3DEditor {
         }
 
         private init(pref:Preferences, series:DicomSeriesInfo) {
+//alert("ONLY: "+ series.pixelSpacing+"   sliSpac: "+ series.sliceThickness)
 
             // patch rs and ri if slope and intercept are undefined
             let rescaleSlope = series['rescaleSlope'];
@@ -646,10 +652,8 @@ module br.usp.dilvanLab.roi3DEditor {
             this.jpegTransfShader = WebGLViewerImpl.createProgram(gl,
                 shaders.simpleVs, shaders.jpegTransfFs);
 
-            this.loadShader = WebGLViewerImpl.createProgram(gl,
-                shaders.simpleVs, shaders.plainFs);
-
-
+            //this.loadShader = WebGLViewerImpl.createProgram(gl,
+            //    shaders.simpleVs, shaders.plainFs);
 
             this.defIntVars(this.jpegTransfShader);
             GL.setI(gl, this.jpegTransfShader, "defaultWC", this._defaultWC);
@@ -796,9 +800,15 @@ module br.usp.dilvanLab.roi3DEditor {
             gl.bindTexture(gl.TEXTURE_2D, plane.imgTexture.dso);
             GL.setI(gl, this.simpleShader, "uDSO", 1);
 
-            const alpha = (plane === this.axial) ? 1 : (this.imgWidth * this.pixelSpacing) / (this._sliceSpacing * this.numImgs);
-            const beta = ((alpha - 1.0) / (2.0 * alpha));
+            // TODO: Verify if this correction is needed (See: xCoord(x:number))
+            //let alpha = (plane === this.axial) ? 1 : (this.imgWidth * this.pixelSpacing) / (this._sliceSpacing * this.numImgs);
+            //if (plane !== this.axial) alpha = -(1-alpha);
+            const alpha = (plane === this.axial) ? 1 : this.xCorrection;
 
+            //alpha=1;
+            const beta = (alpha - 1.0) / (2.0 * alpha);
+            //beta=0;
+            console.log('Careful alpha: '+alpha+ ' beta: '+beta)
             let lineX = 0, lineY = 0;
             GL.setF(gl, this.simpleShader, "zoom", plane.zoom);
 
@@ -822,16 +832,26 @@ module br.usp.dilvanLab.roi3DEditor {
             gl.deleteBuffer(zoomBuffer);
         }
 
+        get xCorrection(){
+            let alpha =  (this.imgWidth * this.pixelSpacing) / (this._sliceSpacing * this.numImgs);
+            return alpha - 1
+        }
+
         /**
          * Convert the sphere cursor x coordinate into the image x
          * coordinate.
          * @param x cursor x coordinate
          * @return image x coordinate
          */
-        //@Override
+        //TODO: Verify if that correction is needed (See alpha in showPlane)
         xCoord(x:number) {
-            const dz = this._sliceSpacing / (this.imgWidth * this.pixelSpacing);
-            return (x - 0.5) * (this.numImgs * dz) + 0.5;
+            return x;
+            //const dz = this._sliceSpacing / (this.imgWidth * this.pixelSpacing);
+            //return (x - 0.5) * (this.numImgs * dz) + 0.5;
+            return (x - 0.5) / (this.xCorrection + 1) + 0.5;
+
+            //let alpha = (plane === this.axial) ? 1 : (this.imgWidth * this.pixelSpacing) / (this._sliceSpacing * this.numImgs);
+
         }
 
         //@Override
