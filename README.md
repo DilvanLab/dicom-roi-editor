@@ -5,7 +5,7 @@ A Polymer component to visualize Dicom images and edit 2D and 3D ROI (Regions of
 To test component:
 
 1. Clone project (or download and unzip project) using button above.
-2. Go to project folder and run the [`polyserve`](https://github.com/PolymerLabs/polyserve) command.
+2. Go to project folder and run the [`polyserve`](https://github.com/PolymerLabs/polyserve) command ([npm](https://www.npmjs.com/) needed to install polyserve).
 3. On a browser, go to [`http://localhost:8080/components/dicom-roi-editor/demo/`](http://localhost:8080/components/dicom-roi-editor/demo/).
 4. Press the `Load Images` button.
 
