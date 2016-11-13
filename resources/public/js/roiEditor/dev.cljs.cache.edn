@@ -1,0 +1,1 @@
+{:rename-macros {}, :renames {}, :use-macros {}, :excludes #{}, :name roiEditor.dev, :imports nil, :requires {editor roiEditor.core, roiEditor.core roiEditor.core, fw figwheel.client, figwheel.client figwheel.client}, :uses nil, :require-macros nil, :cljs.analyzer/constants {:seen #{:on-jsload :websocket-url}, :order [:on-jsload :websocket-url]}, :doc nil}
