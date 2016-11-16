@@ -123,8 +123,6 @@ module br.usp.dilvanLab.roi3DEditor {
             if (pref && series)
                 this.init(pref, series);
         }
-        
-        
 
         //@Override
         get sliceSpacing() {

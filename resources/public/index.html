@@ -9,7 +9,7 @@
     <link rel="shortcut icon" href="/images/favicon.ico">
 
   </head>
-  <body>
+  <body onresize="resizeCanvas()">
     <div id="app">
       <h1>Reagent example app – see README.md</h1>
     </div>
@@ -18,6 +18,16 @@
     <script>
         window.onload = function () {
             roiEditor.core.run();
+            resizeCanvas();
+        }
+        function resizeCanvas() {
+            const divs = document.getElementsByClassName("canvas-holder");
+            for (var i=0; i<divs.length; i++) {
+                const e = divs[i]
+                const _canvas = e.firstChild;// .document.getElementById("epad-canvas");
+                _canvas.width = e.clientWidth;
+                _canvas.height = e.clientWidth;//_div.clientHeight;
+            }
         }
     </script>
   </body>

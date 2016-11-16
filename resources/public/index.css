@@ -20,3 +20,14 @@ div, h1, input {
     font-size: 24px;
     line-height: 1.5em;
 }
+
+.canvasHolder{
+
+}
+
+
+/*canvas {*/
+    /*height: 100vh;*/
+    /*width: 100vw;*/
+    /*display: block;*/
+/*}*/
