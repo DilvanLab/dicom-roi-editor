@@ -187,7 +187,15 @@
 (def initial-state
   {:series [{:prefs pref
              :series series
-             :pngs lstPngs}]})
+             :pngs lstPngs}]
+   :context {:mouse {:x 0 :y 0}
+             :actual {:x 0 :y 0}
+             :mouse-down false
+             :tool "gradient"}})
+;mouse = {x: 0, y: 0}
+;actual = {x: 0, y: 0}
+;mouseIsDown:boolean = false
+;tool:string
 
 ;; -------------------------------
 

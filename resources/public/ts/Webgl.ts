@@ -76,10 +76,10 @@ module br.usp.dilvanLab.roi3DEditor {
 
             drawing.onmousemove = (event:MouseEvent) => {
 
-                if (!this.mouseIsDown) return
+                if (!this.mouseIsDown) return;
                 //if (!(isActive && imagesQueued)) return;
 
-                this.mouse = this.getMousePos(drawing, event)
+                this.mouse = this.getMousePos(drawing, event);
                 //this.mouseX = 0.0 + event.getRelativeX(drawing.getElement());
                 //this.mouseY = 0.0 + event.getRelativeY(drawing.getElement());
 
@@ -386,9 +386,9 @@ module br.usp.dilvanLab.roi3DEditor {
         onmousedown(event:MouseEvent):void {
             //if (spWebGL == null) return;
 
-            const plane = this.whichPlane(event)
+            const plane = this.whichPlane(event);
             if (plane == -1) return;
-            const mouse = this.getMouse(event)
+            const mouse = this.getMouse(event);
 
             this.resetSlider();
             this.viewer.setPlanesCoord(plane/*drawing.plane*/, mouse.x, mouse.y);
@@ -438,7 +438,7 @@ module br.usp.dilvanLab.roi3DEditor {
         onkeydown(event:KeyboardEvent):void {
             let zoom:number;
             const key = event.charCode;
-            alert('Key event: '+key)
+            alert('Key event: '+key);
             // TODO: Shouldn't we do it in the overlay correspondent to the plane being zoomed?
             switch (key) {
                 case this.UP_ARROW:

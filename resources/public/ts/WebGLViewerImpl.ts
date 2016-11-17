@@ -578,7 +578,7 @@ module br.usp.dilvanLab.roi3DEditor {
         }
 
         private init(pref:Preferences, series:DicomSeriesInfo) {
-//alert("ONLY: "+ series.pixelSpacing+"   sliSpac: "+ series.sliceThickness)
+            //alert("ONLY: "+ series.pixelSpacing+"   sliSpac: "+ series.sliceThickness)
 
             // patch rs and ri if slope and intercept are undefined
             let rescaleSlope = series['rescaleSlope'];
