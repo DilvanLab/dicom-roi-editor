@@ -25,7 +25,7 @@
 
   :figwheel {:repl false}
 
-  :clean-targets ^{:protect false} ["resources/public/js"]
+  ;;:clean-targets ^{:protect false} ["resources/public/js"]
 
   :cljsbuild {:builds {:client {:source-paths ["src"]
                                 :compiler     {:output-dir "resources/public/js"
