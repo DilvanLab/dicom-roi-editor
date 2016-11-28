@@ -868,7 +868,7 @@ var br;
                         this.mouseIsDown = false;
                         this.tool = 'gradient';
                     }
-                    Context.prototype.getMousePos = function (canvas, event) {
+                    Context.getMousePos = function (canvas, event) {
                         var rect = canvas.getBoundingClientRect();
                         return {
                             x: event.clientX - rect.left,
@@ -887,7 +887,7 @@ var br;
                         drawing.onmousemove = function (event) {
                             if (!_this.mouseIsDown)
                                 return;
-                            _this.mouse = _this.getMousePos(drawing, event);
+                            _this.mouse = Context.getMousePos(drawing, event);
                             event.preventDefault();
                             if (event.shiftKey) {
                                 modes['zoom'].onmousemove(event);
@@ -896,7 +896,7 @@ var br;
                                 modes[_this.tool].onmousemove(event);
                         };
                         drawing.onmousedown = function (event) {
-                            _this.mouse = _this.getMousePos(drawing, event);
+                            _this.mouse = Context.getMousePos(drawing, event);
                             _this.actual.x = _this.mouse.x;
                             _this.actual.y = _this.mouse.y;
                             if (_this.mouseIsDown)
@@ -917,7 +917,7 @@ var br;
                             modes[_this.tool].ondblclick(event);
                         };
                         drawing.onmouseup = function (event) {
-                            _this.mouse = _this.getMousePos(drawing, event);
+                            _this.mouse = Context.getMousePos(drawing, event);
                             if (!_this.mouseIsDown)
                                 return;
                             _this.mouseIsDown = false;
@@ -959,7 +959,7 @@ var br;
                     Mode.prototype.whichPlane = function (event) {
                         var canvas = this.viewer.gl.canvas;
                         if (this.viewer.activePlane == roi3DEditor.ALL) {
-                            var pos = this.context.getMousePos(canvas, event);
+                            var pos = Context.getMousePos(canvas, event);
                             console.log('getPlane: ' + pos.x + ' ' + pos.y + ' canvas: ' + canvas.width + ' ' + canvas.height);
                             if (pos.x < canvas.width / 2 && pos.y < canvas.height / 2)
                                 return roi3DEditor.AXIAL;
@@ -975,11 +975,7 @@ var br;
                             return this.viewer.activePlane;
                     };
                     Mode.prototype.getMouse = function (event) {
-                        var rect = this.viewer.gl.canvas.getBoundingClientRect();
-                        var ret = {
-                            x: event.clientX - rect.left,
-                            y: event.clientY - rect.top
-                        };
+                        var ret = Context.getMousePos(this.viewer.gl.canvas, event);
                         if (this.viewer.activePlane == roi3DEditor.ALL) {
                             var x = this.viewer.gl.canvas.width / 2;
                             var y = this.viewer.gl.canvas.height / 2;

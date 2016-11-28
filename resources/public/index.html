@@ -7,26 +7,29 @@
     <link rel="stylesheet" type="text/css" href="style.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="shortcut icon" href="/images/favicon.ico">
+    <link rel="import" href="dicom-roi-editor/index.html">
 
   </head>
   <body onresize="resizeCanvas()">
     <div id="app">
-      <h1>Reagent example app – see README.md</h1>
+      <h1>Dicom Roi Editor</h1>
     </div>
-    <script type="text/javascript" src="js/app.js"></script>
     <script src="js/client.js"></script>
     <script>
         window.onload = function () {
             roiEditor.core.run();
             resizeCanvas();
-        }
+        };
         function resizeCanvas() {
-            const divs = document.getElementsByClassName("canvas-holder");
-            for (var i=0; i<divs.length; i++) {
-                const e = divs[i]
-                const _canvas = e.firstChild;// .document.getElementById("epad-canvas");
-                _canvas.width = e.clientWidth;
-                _canvas.height = e.clientWidth;//_div.clientHeight;
+            const divs = document.getElementsByClassName("editor-holder");
+            for (let i=0; i<divs.length; i++) {
+                const e = divs[i];
+                const editor = e.firstChild;// .document.getElementById("epad-canvas");
+                editor.resize(e.clientWidth);
+
+//                //let x = Math.max(e.clientWidth, e.clientHeight)
+//                _canvas.width = e.clientWidth;
+//                _canvas.height = e.clientWidth;//_div.clientHeight;
             }
         }
     </script>

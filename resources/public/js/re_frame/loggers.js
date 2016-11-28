@@ -61,4 +61,4 @@ throw (new Error([cljs.core.str("Assert failed: "),cljs.core.str("Unknown keys i
 return cljs.core.swap_BANG_.call(null,re_frame.loggers.loggers,cljs.core.merge,new_loggers);
 });
 
-//# sourceMappingURL=loggers.js.map?rel=1478875877022
+//# sourceMappingURL=loggers.js.map?rel=1480335649577

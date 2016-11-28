@@ -3,7 +3,9 @@
                  [org.clojure/clojurescript  "1.9.227"]
                  [reagent  "0.6.0" :exclusions [cljsjs/react]]
                  [re-frame "0.8.0"]
-                 [cljs-react-material-ui "0.2.27"]]
+                 [cljs-react-material-ui "0.2.27"]
+                 ;[rm-hull/jasentaa "0.2.3"]
+                 [rm-hull/infix "0.2.11"]]
 
   :plugins [[lein-cljsbuild "1.1.3"]
             [lein-figwheel  "0.5.4-7"]]
@@ -25,7 +27,7 @@
 
   :figwheel {:repl false}
 
-  ;;:clean-targets ^{:protect false} ["resources/public/js"]
+  :clean-targets ^{:protect false} ["resources/public/js"]
 
   :cljsbuild {:builds {:client {:source-paths ["src"]
                                 :compiler     {:output-dir "resources/public/js"

@@ -28835,4 +28835,4 @@ return cljs_react_material_ui.icons.toggle_star.cljs$core$IFn$_invoke$arity$vari
 });
 
 
-//# sourceMappingURL=icons.js.map?rel=1478875901910
+//# sourceMappingURL=icons.js.map?rel=1480335673179

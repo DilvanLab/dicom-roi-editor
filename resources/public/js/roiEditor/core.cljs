@@ -1,23 +1,43 @@
 (ns roiEditor.core
-  (:require-macros [reagent.ratom :refer [reaction]])
+  (:require-macros [reagent.ratom :refer [reaction]]
+                   [roiEditor.macros :refer [$ →]])
   (:require [cljsjs.material-ui]
             [cljs-react-material-ui.core :refer [get-mui-theme color]]
             [cljs-react-material-ui.reagent :as ui :refer [mui-theme-provider app-bar]]
             [cljs-react-material-ui.icons :as ic]
             ;[cljs-react-material-ui.colors :as sty]
-
             [reagent.core :as r]
             [re-frame.core :refer [reg-event-db
                                    path
                                    reg-sub
                                    dispatch
                                    dispatch-sync
-                                   subscribe]]))
+                                   subscribe]]
+            [goog.events :as gevents])
 
+  (:import  (goog.events EventTarget EventType)))
 
 ;; trigger a dispatch every second
-(defonce time-updater (js/setInterval
-                        #(dispatch [:timer (js/Date.)]) 1000))
+;(defonce time-updater (js/setInterval
+;                        #(dispatch [:timer (js/Date.)]) 1000]))
+
+;;   Browser events
+;;
+(def MOUSE-DOWN EventType.MOUSEDOWN)
+(def MOUSE-UP EventType.MOUSEUP)
+(def MOUSE-MOVE EventType.MOUSEMOVE)
+(def MOUSE-OUT EventType.MOUSEOUT)
+(def DBL-CLICK EventType.DBLCLICK)
+(def KEY-DOWN EventType.KEYDOWN)
+(def WHEEL EventType.WHEEL)
+
+
+(def base-URL "1.2.826.0.1.3680043.8.420.29267207592271555902603369361594637742/series/1.2.826.0.1.3680043.8.420.13029244630897359628709378005929429184/images/");
+
+(def ALL js/br.usp.dilvanLab.roi3DEditor.ALL)
+(def AXIAL js/br.usp.dilvanLab.roi3DEditor.AXIAL)
+(def FRONTAL js/br.usp.dilvanLab.roi3DEditor.FRONTAL)
+(def SAGITTAL js/br.usp.dilvanLab.roi3DEditor.SAGITTAL)
 
 (def pref
   {:overrideCenter 0,
@@ -36,8 +56,6 @@
              :sliceThickness      "1.25",
              :windowCenter        "00040\\00040",
              :windowWidth         "00400\\00400"})
-
-(def base-URL "1.2.826.0.1.3680043.8.420.29267207592271555902603369361594637742/series/1.2.826.0.1.3680043.8.420.13029244630897359628709378005929429184/images/");
 
 (def lstPngs [
               "1.2.826.0.1.3680043.8.420.16553737991475343282684803816940891307.png",
@@ -186,232 +204,490 @@
               "1.2.826.0.1.3680043.8.420.25262566473088730394743177389226598459.png",
               "1.2.826.0.1.3680043.8.420.32592795188011088359506779691378232430.png"])
 
+(def last-mouse (atom {:x 0 :y 0}))
+(def mouse-is-down (atom false))
+
 (def initial-state
-  {:timer (js/Date.)
-   :time-color "#f00"
-   :series [{:prefs pref
-             :series series
-             :pngs lstPngs}]
-   :todo {:todo-name "Test"}})
+  {:views [{:prefs pref
+            :series series
+            :pngs lstPngs
+            :editor nil}]
+   :context {:last-mouse {:x 0 :y 0}
+             :mouse-is-down false}})
+
+(defn current-view [db] (nth (:views db) 0))
+
+;; -------------------------------
+; [:canvas-event mode
+
+(defn get-mouse-pos [editor event]
+  (let [canvas (-> editor .-gl .-canvas)
+        rect (.getBoundingClientRect canvas)]
+    {:x (- event.clientX (.-left rect))
+     :y (- event.clientY (.-top rect))}))
+
+
+
+(defn get-mouse [editor event]
+  (let [canvas (-> editor .-gl .-canvas)
+        {:keys [x y]} (get-mouse-pos editor event)]
+
+    ;; Coordinates are specific to each plane
+    ;; If all planes are showing, they have to be corrected
+    (if (= (.-activePlane editor) ALL)
+      (let [width (/ (.-width canvas) 2)
+            height (/ (.-height canvas) 2)]
+        {:x (if (> x width) (- x width) x)
+         :y (if (> y height) (- y height) y)})
+      {:x x :y y})))
+
+(defn which-plane [editor event]
+  (let [canvas (-> editor .-gl .-canvas)
+        c-width (/ (.-width canvas) 2)
+        c-height (/ (.-height canvas) 2)
+        active-plane (.-activePlane editor)]
+    (if (= active-plane ALL)
+      (let [pos (get-mouse-pos editor event)]
+        (cond
+          ($(:x pos) < c-width && (:y pos) < c-height) AXIAL
+          ($(:x pos) > c-width && (:y pos) > c-height) -1
+          ($(:x pos) > c-width) FRONTAL
+          ($(:y pos) > c-height) SAGITTAL
+          :else -1))
+      active-plane)))
+
+(defmulti canvas-event
+          (fn [_ mode event]
+            ;(js/alert (str (-> (:editor db) .-context .-tool) " & " event))
+            (if (= event.type EventType.DBLCLICK)
+              [EventType.DBLCLICK]
+              [mode event.type])))
+
+(defmethod canvas-event [EventType.DBLCLICK] [db _ event]
+  (let [editor (:editor (current-view db))]
+    (if (= (.-activePlane editor) ALL)
+      (set! (.-activePlane editor) (which-plane editor event))
+      (set! (.-activePlane editor) ALL))
+    (.drawImage editor)))
+
+
+;;default handling
+(defmethod canvas-event :default [db mode event]
+  (println (str "canvas-event: " mode " " (.-type event)))) ;(:context :tool db) "="))) ;event-type)))
+
+;;-------------------------------------------------------------
+;;   Tools implementation
+;;
+
+;;
+;;    Move
+;;
+(defn deltaX [editor x old-x]
+  (let [canvas (-> editor .-gl .-canvas)
+        rect (.getBoundingClientRect canvas)]
+    (- (- old-x (.-left rect)) (- x (.-left rect)))))
+
+(defn deltaY [editor x old-x]
+  (let [canvas (-> editor .-gl .-canvas)
+        rect (.getBoundingClientRect canvas)]
+    (- (- old-x (.-top rect)) (- x (.-top rect)))))
+
+(defmethod canvas-event ["move" MOUSE-MOVE] [db mode event]
+  (let [;event (.getBrowserEvent g-event)
+        editor (:editor (current-view db))
+        plane (which-plane editor event)
+        mouse (get-mouse-pos editor event)
+        mult (if (= ALL (.-activePlane editor)) 2 1)
+        deltaX (* mult (.pixels2Units editor plane
+                                      ;(- (:x mouse) (:x (-> db :context :last-mouse)))
+                                      (.-movementX (.getBrowserEvent event))))
+                                      ;(deltaX editor (.-clientX event) (+ (.-clientX event) (.-movementX (.getBrowserEvent event))))
+                                      ;(- (.-clientX event) (.-mouseDownX event));(:x (-> db :context :last-mouse)))))
+                                      ;event.movementX))
+        deltaY (* mult (.pixels2Units editor plane
+                                      ;(- (:y mouse) (:y (-> db :context :last-mouse))))
+                                      (.-movementY (.getBrowserEvent event)))
+                                      ;(deltaY editor (.-clientY event) (+ (.-clientY event) (.-movementY (.getBrowserEvent event))))
+
+  ;(- (.-clientY event) (.-mouseDownY event)));(:y (-> db :context :last-mouse))))
+                                      ;event.movementY)))] ;))))]
+                  -1)]
+
+    (cond (not= plane -1)
+          (do
+            (.setX editor plane (- (.getX editor plane) deltaX))
+            (.setY editor plane (- (.getY editor plane) deltaY))
+            (.drawImage editor)
+            (assoc-in db [:context :last-mouse] mouse)))))
+
+;;
+;;   Zoom
+;;
+(defmethod canvas-event ["zoom" MOUSE-MOVE] [db mode event]
+  (let [;m-old (→ db :context :last-mouse)
+        editor (:editor (current-view db))
+        ;m-now (get-mouse-pos editor event)
+        plane (which-plane editor event)
+        ;delta («(((:x m-now) - (:x m-old)) + ((:y m-now) - (:y m-old))) / 4)
+        delta (/ (+ (.-movementX (.getBrowserEvent event));(- (:x m-now) (:x m-old))
+                    (.-movementY (.getBrowserEvent event)));(- (:y m-now) (:y m-old)))
+                 4)
+        ;zoom (« (.getZoom editor plane) + delta / (→ editor .-gl .-canvas .-width))
+        zoom (+ (.getZoom editor plane)
+                (/ delta
+                   (→ editor .-gl .-canvas .-width)))]
+    (.setZoom editor plane zoom)
+    (.drawImage editor)))
+
+(defmethod canvas-event ["zoom" KEY-DOWN] [db mode event]
+  (let [editor (:editor (current-view db))
+        code (.-charCode event)]
+    (js/alert code)
+    (case code
+      ;UP_ARROW
+      38 (.setZoom editor AXIAL (/ (.getZoom editor AXIAL) 0.9))
+      ;DOWN_ARROW
+      40 (.setZoom editor AXIAL (* (.getZoom editor AXIAL) 0.9))
+      ;RIGHT_ARROW
+      39 (.setActiveImage editor AXIAL (js/Math.max(js/Math.min(+ (.getImageCoord editor AXIAL) (/ 1.0 (.-imageNumber editor))) 1) 0))
+      ;LEFT_ARROW
+      37 (.setActiveImage editor AXIAL (js/Math.max(js/Math.min(+ (.getImageCoord editor AXIAL) (/ 1.0 (.-imageNumber editor))) 1) 0)))
+    (.drawImage editor)))
+
+
+;;
+;;    Scroll
+;;
+(defmethod canvas-event ["scroll" MOUSE-DOWN] [db mode event]
+  (let [editor (:editor (current-view db))
+        mouse (get-mouse editor event)
+        plane (which-plane editor event)]
+    (cond (not= plane -1)
+          (do
+            (.setPlanesCoord editor plane (:x mouse) (:y mouse))
+            ;(println (:x mouse) "- " (:y mouse))
+            (.drawImage editor)))))
+
+(defmethod canvas-event ["scroll" MOUSE-MOVE] [db mode event]
+  (let [editor (:editor (current-view db))
+        mouse (get-mouse editor event)
+        plane (which-plane editor event)]
+    (cond (not= plane -1)
+          (do
+            (.setPlanesCoord editor plane (:x mouse) (:y mouse))
+            ;(println (:x mouse) "- " (:y mouse))
+            (.drawImage editor)))))
+
+(defmethod canvas-event ["scroll" WHEEL] [db mode g-event]
+  (let [event (.getBrowserEvent g-event)
+        editor (:editor (current-view db))
+        plane (which-plane editor event)
+        clip #(max (min % 1) 0)]
+    (cond (not= plane -1)
+          (let [plane2act (if (= (.-activePlane editor) ALL)
+                            plane
+                            (.-activePlane editor))]
+            (.setActiveImage editor plane2act
+                             (clip
+                               (+ (.getImageCoord editor plane2act)
+                                  ;;   It shouldn' be this way. Why do we have to call the
+                                  ;;   browser event to get the deltaY?
+                                  (/ (if (> (.-deltaY event) 0) 1 -1)
+                                     (.-imageNumber editor)))))
+            (.drawImage editor)))))
+
+
+;;
+;;   Gradient
+;;
+
+(defn set-windowing! [editor center width]
+  (if ($ center = 0 && width = 0) ;and (= 0 center) (= 0 width)
+    (do
+      (set! (.-windowingCenter editor) (.-defaultWC editor))
+      (set! (.-windowingWidth editor)  (.-defaultWW editor)))
+    (do
+      (set! (.-windowingCenter editor) center)
+      (set! (.-windowingWidth editor)  width))))
+
+(defmethod canvas-event ["gradient" MOUSE-MOVE] [db mode g-event]
+  (let [event (.getBrowserEvent g-event)
+        editor (:editor (current-view db))
+        canvas (-> editor .-gl .-canvas)
+        deltaWW ($ (4 * (.-movementX event) / (.-width  canvas) * (.-defaultWW editor)))
+        deltaWC ($ (4 * (.-movementY event) / (.-height canvas) * (.-defaultWC editor)))]
+        ;deltaWW2 (* (/ (* 4 (.-movementX event)) (.-width  canvas)) (.-defaultWW editor))
+        ;deltaWC2 (* (/ (* 4 (.-movementY event)) (.-height canvas)) (.-defaultWC editor))]
+    ;(js/alert (in/form '($ (4 * (.-movementX event)) / (.-width canvas) * (.-defaultWW editor))))
+    ;(cond (or (not= deltaWW deltaWW2) (not= deltaWC deltaWC2))
+    ;      (js/alert (str " Not equal!" deltaWW " " deltaWW2 " & " deltaWC " " deltaWC2))]
+    (set-windowing! editor (+ (.-windowingCenter editor) deltaWC) (+ (.-windowingWidth editor) deltaWW))
+    (.drawImage editor)))
+
+;;-----------------------
+
+
+(defn load-pics [editor lstPngs]
+  (dorun (map-indexed
+           #(.loadPngTexture editor %1 (str base-URL %2))
+           lstPngs))
+  (js/resizeCanvas))
+
+(defn get-pos [canvas event]
+  (let [rect (.getBoundingClientRect canvas)]
+    {:x (- event.clientX (.-left rect))
+     :y (- event.clientY (.-top rect))}))
+
+
+(defn listen [element event-type fnt]
+  (cond (= event-type MOUSE-DOWN)
+        (gevents/listen element event-type
+                       (fn [evt]
+                         (try
+                           (get-pos element evt)
+                           (reset! last-mouse {:x evt.clientX :y evt.clientY});(get-pos element evt))
+                           (reset! mouse-is-down true))
+                         (fnt evt)))
+        (= event-type MOUSE-UP)
+        (gevents/listen element event-type
+                        (fn [evt]
+                          (try
+                            (get-pos element evt)
+                            (reset! mouse-is-down false))
+                          (fnt evt)))
+        :else
+        (gevents/listen element event-type
+                        (fn [evt]
+                          (set! (.-mouseDownX evt) (:x @last-mouse))
+                          (set! (.-mouseDownY evt) (:y @last-mouse))
+                          (set! (.-mouseIsDown evt) @mouse-is-down)
+                          (fnt evt)))))
+
+(defn glisten [element evt-type]
+  (listen element evt-type (fn [evt]
+                             (dispatch [:canvas-event evt])
+                             ; prevents this event from going to the window to
+                             ; fixes things, like scrolling the view
+                             ;(.alert js/window evt.type)
+                             (.preventDefault evt))))
+
+(defn register-events [element]
+ ; (let [glisten #]
+    (glisten element MOUSE-DOWN)
+    (glisten element MOUSE-UP)
+    (glisten element MOUSE-MOVE)
+    (glisten element MOUSE-OUT)
+    (glisten element DBL-CLICK)
+    (glisten element KEY-DOWN)
+    (glisten element WHEEL))
+
+(defn init [cnv {:keys [prefs series pngs]}]
+  (if-let [canvas (.makeCanvas (.getElementById js/document cnv))];(.-firstChild (.getElementById js/document cnv))]
+    (let [editor (js/br.usp.dilvanLab.roi3DEditor.WebGLViewerImpl. canvas, 0, (clj->js prefs), (clj->js series))]
+      ;(js/alert (.-className canvas))
+      (set! (.-activePlane editor) ALL)
+      (set! (.-context editor) (js/br.usp.dilvanLab.roi3DEditor.Context. editor))
+      (register-events canvas)
+
+      ;(.initDrawingHandlers (.-context editor))
+      (load-pics editor pngs)
+      editor)
+    (js/alert (str "Null editor: " cnv))))
+
+
+;(defn init1 [cnv {:keys [prefs series pngs]}]
+;  (if-let [canvas (.getElementById js/document cnv)]
+;    (let [editor (js/br.usp.dilvanLab.roi3DEditor.WebGLViewerImpl. canvas, 0, (clj->js prefs), (clj->js series))]
+;      (set! (.-activePlane editor) ALL)
+;      (set! (.-context editor) (js/br.usp.dilvanLab.roi3DEditor.Context. editor))
+;      (.initDrawingHandlers (.-context editor))
+;      (load-pics editor pngs)
+;      editor)
+;    (js/alert (str "Null canvas: " cnv))))
 
 
 ;; -- Event Handlers ----------------------------------------------------------
 
-
-(reg-event-db                 ;; setup initial state
-  :initialize                     ;; usage:  (dispatch [:initialize])
-  (fn
-    [db _]
-    (merge db initial-state)))    ;; what it returns becomes the new state
-
+(reg-event-db                                               ;; setup initial state
+  :initialize                                               ;; usage:  (dispatch [:initialize])
+  (fn [db _]
+    (merge db initial-state)))                              ;; what it returns becomes the new state
 
 (reg-event-db
-  :time-color                     ;; usage:  (dispatch [:time-color 34562])
-  (path [:time-color])            ;; this is middleware
-  (fn
-    [time-color [_ value]]        ;; path middleware adjusts the first parameter
-    value))
+  :canvas-event
+  (fn [db [_ event]]
+    (let [editor (:editor (current-view db))
+          mode (-> editor .-context .-tool)
+          mouse-is-down (.-mouseIsDown event)] ;(-> db :context :mouse-is-down)]
+      ;(js/alert (.-mouseIsDown event))
+      (if-let
+        [new (condp = event.type
+               MOUSE-DOWN
+               (let [mouse (get-mouse-pos editor event)
+                     db2 (assoc-in db [:context :last-mouse] mouse)]
+                 (if mouse-is-down
+                   db2
+                   (let [db3 (assoc-in db2 [:context :mouse-is-down] true)]
+                     (cond (not (or event.shiftKey event.metaKey))
+                           (canvas-event db3 mode event))
+                     db3)))
 
+               MOUSE-MOVE
+               (cond mouse-is-down
+                     (if event.shiftKey
+                       (canvas-event db "zoom" event)
+                       (canvas-event db mode event)))
+
+               MOUSE-UP
+               (cond MOUSE-DOWN
+                     (let [db3 (assoc-in db [:context :mouse-is-down] false)]
+                       (cond (not (or event.shiftKey event.metaKey))
+                             (canvas-event db3 mode event))
+                       db3))
+
+               MOUSE-OUT
+               (canvas-event db mode event)
+
+               DBL-CLICK
+               (canvas-event db mode event)
+
+               WHEEL
+               (canvas-event db "scroll" event)
+
+               KEY-DOWN
+               (canvas-event db mode event)
+
+               db)]
+        new
+        db))))
 
 (reg-event-db
-  :timer
-  (fn
-    ;; the first item in the second argument is :timer the second is the
-    ;; new value
-    [db [_ value]]
-    (assoc db :timer value)))    ;; return the new version of db
+  :load-imgs
+  (fn [db [_ [canvas-id series]]]
+    (assoc-in db
+      [:views 0 :editor] (init canvas-id series))))                    ;; what it returns becomes the new state
+
+(reg-event-db
+  :inc
+  (fn [db _]
+    (let [editor (:editor (current-view db))
+          ;incn #(if (> (+ % 0.01) 0.99) 0.99 (+ % 0.01))
+          incn #(if ($ (% + 0.01) > 0.99) 0.99 ($ % + 0.01))
+          c (incn (.getImageCoord editor AXIAL))]
+      (.setActiveImage editor AXIAL c)
+      (.setActiveImage editor FRONTAL c)
+      (.setActiveImage editor SAGITTAL c)
+      (.drawImage editor)
+      db)))      ;; what it returns becomes the new state
+
+(reg-event-db
+  :dec
+  (fn [db _]
+    (let [editor (:editor (current-view db))
+          decn #(if (< (- % 0.01) 0) 0 (- % 0.01))
+          c (decn (.getImageCoord editor AXIAL))]
+      (.setActiveImage editor AXIAL c)
+      (.setActiveImage editor FRONTAL c)
+      (.setActiveImage editor SAGITTAL c)
+      (.drawImage editor)
+      db)))      ;; what it returns becomes the new state
+
+(reg-event-db
+  :change-mode
+  (fn [db [_ value]]
+    (set! (-> (:editor (current-view db)) .-context .-tool) value)
+    (assoc db :change value)))      ;; what it returns becomes the new state
+
+;(reg-event-db
+;  :time-color                     ;; usage:  (dispatch [:time-color 34562])
+;  (path [:time-color])            ;; this is middleware
+;  (fn
+;    [time-color [_ value]]        ;; path middleware adjusts the first parameter
+;    value))
 
 
 ;; -- Subscription Handlers ---------------------------------------------------
 
 (reg-sub
   :initialize
-  (fn
-    [db _]
-    (:series db)))
+  (fn [db _]
+    (:views db)))
 
 (reg-sub
-  :timer
-  (fn
-    [db _]             ;; db is the value currently in the app-db atom
-    (:timer db)))
-
-
-(reg-sub
-  :time-color
-  (fn
-    [db _]
-    (:time-color db)))
-
-;; -------------------------------
-
-
-(defn load-pics [editor lstPngs]
-
-  (dorun (map-indexed
-           #(.loadPngTexture editor %1 (str base-URL %2))
-           lstPngs)))
-
-
-(defn init [cnv pref series pngs]
-
-  (let [canvas  (.querySelector js/document cnv)
-        editor  (if (nil? canvas)
-                  nil
-                  (js/br.usp.dilvanLab.roi3DEditor.WebGLViewerImpl. canvas, 0, (clj->js pref), (clj->js series)))]
-    (if (nil? canvas)
-      (js/alert (str "Null canvas: " cnv))
-      (do
-        (set! (.-activePlane editor) js/br.usp.dilvanLab.roi3DEditor.ALL)
-        (set! (.-context editor) (js/br.usp.dilvanLab.roi3DEditor.Context. editor))
-        (.initDrawingHandlers (.-context editor))
-        (load-pics editor pngs)))))
-
+  :change-mode
+  (fn [db _]
+    (try
+      (-> (:editor (current-view db)) .-context .-tool)
+      (catch js/Object e ""))))
 
 ;; -- View Components ---------------------------------------------------------
 
-(defn clock
-  []
-  (let [time-color (subscribe [:time-color])
-        timer (subscribe [:timer])]
-       #(let [time-str (-> @timer .toTimeString (clojure.string/split " ") first)
-              style {:style {:color @time-color}}]
-             [:div.example-clock style time-str])))
+;(defn clock
+;  []
+;  (let [time-color (subscribe [:time-color])
+;        timer (subscribe [:timer])]
+;       #(let [time-str (-> @timer .toTimeString (clojure.string/split " ") first)
+;              style {:style {:color @time-color}}]
+;             [:div.example-clock style time-str])))
 
-(defn color-input
-  []
-  (let [time-color (subscribe [:time-color])]
+;(defn color-input
+;  []
+;  (let [time-color (subscribe [:time-color])]
+;    (fn []
+;        [:div.color-input
+;          "Time color: "
+;          [:input {:type "text"
+;                   :value @time-color
+;                   :on-change #(dispatch
+;                                [:time-color (-> % .-target .-value)])}]])))
+
+(defn button [icon tooltip selected event]
+  [:div {:title tooltip}
+   [ui/flat-button {:icon  icon
+                    :background-color (if selected "#d0d060" (color :background-color))
+                    :style {:margin    "12px 0px"
+                            :min-width "35px"}
+                    :on-touch-tap #(dispatch event)}]])
+
+(defn toolbar [canvas-id]
+  (let [series (subscribe [:initialize])
+        mode (subscribe [:change-mode])]
     (fn []
-        [:div.color-input
-          "Time color: "
-          [:input {:type "text"
-                   :value @time-color
-                   :on-change #(dispatch
-                                [:time-color (-> % .-target .-value)])}]])))
-(def filterOptions [
-                          { :payload 1, :text "All Broadcasts" },
-                          { :payload 2, :text "All Voice" },
-                          { :payload 3, :text "All Text" },
-                          { :payload 4, :text "Complete Voice" },
-                          { :payload 5, :text "Complete Text" },
-                          { :payload 6, :text "Active Voice" },
-                          { :payload 7, :text "Active Text" },])
-(def iconMenuItems [
-                          { :payload 1, :text "Download" },
-                          { :payload 2, :text "More Info"}])
+      [ui/toolbar
+       [ui/toolbar-group ;{:first-child true}
+        [ui/toolbar-title {:text "Tools"}]
+        [button (ic/action-search) "zoom" (= @mode "zoom") [:change-mode "zoom"]]
+        [button (ic/maps-my-location) "scroll" (= @mode "scroll") [:change-mode "scroll"]]
+        [button (ic/image-brightness-6) "windowing" (= @mode "gradient") [:change-mode "gradient"]]
+        [button (ic/action-pan-tool) "move" (= @mode "move") [:change-mode "move"]]]
+       [ui/toolbar-group ;{:last-child true}
+        ;[ui/toolbar-separator]
+        [button (ic/file-cloud-download) "download" false [:load-imgs [canvas-id (first @series)]]]
+        [button (ic/communication-call-made) "move +1" false [:inc]]
+        [button (ic/communication-call-received) "move -1" false [:dec]]]])))
 
+(defn simple-example []
+  (let [canvas-id (str "canvas" (rand-int 1000000))]
 
-(defn simple-example
-  []
-  (let [;time-color (subscribe [:time-color])
-        series (subscribe [:initialize])]
-    [mui-theme-provider
-      {:mui-theme (get-mui-theme
-                   {:palette {:text-color (color :blue800)}})}
+    [mui-theme-provider {:mui-theme (get-mui-theme
+                                        {:palette {:text-color (color :blue800)}})}
       [:div
-        [ui/app-bar {:title "ePAD"
-                     :icon-class-name-right "muidocs-icon-navigation-expand-more"}]
-                     ;:show-menu-icon-button true}
-                     ;:icon-element-right
-                     ;       (r/as-element [ui/icon-button
-                     ;                      (ic/action-account-balance-wallet)])}
-
-         ;[ui/toolbar-group {:firstChild true}]]
-          ;[ui/radio-button-group {:name "shipSpeed" :default-selected="not_light"}
-          ; [ui/radio-button {:value "light" :label "Simple" :style {:marginBottom 16}}]
-          ; [ui/radio-button {:value "not_light" :label "Selected by default" :style {:marginBottom 16}}]
-          ; [ui/radio-button {:value "ludicrous" :label "Custom icon"
-          ;                   :checked-icon (ic/action-favorite)
-          ;                   :unchecked-icon (ic/action-favorite-border)
-          ;                   :style {:marginBottom 16}}]]]]
-
-         ; [ui/drop-down-menu {:value 2} ;onChange={this.handleChange}>
-         ;  [ui/menu-item {:value 1 :primary-text "All Broadcasts"}]
-         ;  [ui/menu-item {:value 2 :primary-text "All Voice"}]]]]
-         ;[ui/toolbar-group {:firstChild false :style {
-         ;                                              :float "left",
-         ;                                              :width "200px"
-         ;                                              :marginLeft "auto",
-         ;                                              :marginRight "auto"}}
-         ;                  [ui/icon-button (ic/social-group)][ui/icon-button (ic/social-group)]]
-         ;[ui/icon-button (ic/social-group)]]
-         ;[ui/toolbar-group {:lastChild true :float "right"} [ui/raised-button {:icon (ic/social-group)}]]]
-
-        [ui/toolbar
-         ;[ui/toolbar-group {:firstChild true}
-         ; ;[ui/radio-button-group {:style {:display "flex"} :name "shipSpeed" :default-selected="Running"}
-         ; ; [ui/radio-button {:style {:display "inline-block" :width "100px"}
-         ; ;                   :label "Running"
-         ; ;                   :value "Running"}]
-         ; ; [ui/radio-button {:style {:display "inline-block" :width "100px" :margin-left "30px"}
-         ; ;                   :value "Paused"
-         ; ;                   :label "Paused"}]]
-         ;
-         ; [ui/drop-down-menu {:value 2} ;onChange={this.handleChange}>
-         ;    [ui/menu-item {:value 1 :primary-text "All Broadcasts"}]
-         ;    [ui/menu-item {:value 2 :primary-text "All Voice"}]]]
-
-         [ui/toolbar-group {}
-           [ui/toolbar-title {:text "Tools"}]
-           [ui/flat-button {:icon (ic/action-android)
-                            :style {:margin "12px 0px" :min-width "15px"}}];:font-size "2px"};:text-decoration "none"
-                                    ;:display "inline-block};:border "none" :padding "0px 0px}; ;:margin 12}
-                            ;:width "50%"}]
-           [ui/flat-button {:background-color "#a4c639"
-                            :hover-color "#8AA62F"
-                            :icon (ic/action-android {:color "#FFFFFF"})
-                            :style {:margin 12 :min-width "15px"}}]
-
-           [ui/flat-button {;:label "GitHub Link"
-                            ;:href "https://github.com/callemall/material-ui"
-                            ;:secondary true
-                            ;:style {:min-width "10%"};}
-                            :icon (r/as-element [ui/font-icon {:class-name "muidocs-icon-custom-github" :style {:width "1px"}}])}]
-
-           [ui/font-icon {:class-name "muidocs-icon-custom-sort"
-                          :hover-color "#8AA62F"
-                          :style {:background-color "#ff0000" :margin "5px 5px" :padding "0px 5px"}}]
-           [ui/font-icon {:class-name "muidocs-icon-custom-github"}]
-           ;[ui/drop-down-menu {:icon-class-name "icon-navigation-expand-more" :menu-items iconMenuItems}
-           ;[ui/icon-menu
-           ; (r/as-element
-           ;    [ui/icon-button {:touch true}
-           ;      (ic/navigation-expand-more)])]
-
-
-             ;[ui/radio-button {:value "ludicrous" :label "Custom icon"
-             ;                  :checked-icon (ic/action-favorite)
-             ;                  :unchecked-icon (ic/action-favorite-border)
-             ;                  :style {:marginBottom 16}}]
-           ;[ui/toolbar-separator]]]
-           [ui/raised-button {:label "Create Broadcast" :primary true :width "10px" :button-style {:width "30px"}}]]]
-
-
-        [ui/paper
-          [:div
-            ;[ui/raised-button {:label "kjlj" :icon (ic/social-group)}]
-            ;[:div "Hello"]
-            [:canvas {:id "epad-canvas" :width "512" :height "512"}]
-            [:div "Hello world, it is now"]
-            [clock]
-            [color-input]]
-          [ui/mui-theme-provider
-            {:mui-theme (get-mui-theme {:palette {:text-color (color :blue200)}})}
-            [ui/raised-button {:label "Blue button"}]]
-          (ic/action-home {:color (color :grey600)})
-          [ui/raised-button {:label        "Click me"
-                             :icon         (ic/social-group)
-                             :on-touch-tap  #(init "#epad-canvas"
-                                                   (:prefs (first @series))
-                                                   (:series (first @series))
-                                                   (:pngs (first @series)))}]]]]))
+       [ui/app-bar {:title                 "ePAD"
+                    :icon-class-name-right "muidocs-icon-navigation-expand-more"}]
+       [toolbar canvas-id]
+       [ui/paper
+        [:div {:class "editor-holder"}
+         [:dicom-roi-editor {:id canvas-id}]]]]]))
 
 
 ;; -- Entry Point -------------------------------------------------------------
 
-
 (defn ^:export run
   []
+  ;(.log js/console (formula 3 + (4)))
+  ;(js/alert ($ 3  + (9 / 8) + (Math/sin 4 1)))
+  ;(js/alert (str " $11:" ($ 4 / 4 * 2)))
+  ;(js/alert (str " $:" ($ Math/sin(4) / 4 * x10(Math/sin(2)+ 50))))
   (dispatch-sync [:initialize])
   (r/render [simple-example]
             (js/document.getElementById "app")))

@@ -11,3 +11,6 @@
 .DS_Dtore
 .idea
 bower_components
+target
+.vscode
+pom.xml

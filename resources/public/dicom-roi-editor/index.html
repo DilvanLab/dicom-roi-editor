@@ -1,0 +1,109 @@
+<!--
+  ~    Copyright (c) Dilvan A. Moreira 2016. All rights reserved.
+  ~
+  ~    This program is free software: you can redistribute it and/or modify
+  ~    it under the terms of the GNU General Public License as published by
+  ~    the Free Software Foundation, either version 3 of the License, or
+  ~    (at your option) any later version.
+  ~
+  ~    This program is distributed in the hope that it will be useful,
+  ~    but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~    GNU General Public License for more details.
+  ~
+  ~    You should have received a copy of the GNU General Public License
+  ~    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  ~
+  -->
+
+<template id="dicom-roi-editor">
+    <style>
+    </style>
+
+</template>
+
+<script type="text/javascript" src="js/app.js"></script>
+
+<script>
+    //var ownerDocument = (document._currentScript || document.currentScript).ownerDocument;
+    //var template = ownerDocument.querySelector('#dicom-roi-editor');
+
+    class DicomRoiEditor extends HTMLElement {
+        constructor() {
+            super();
+            this._canvas = null;
+//            this.addEventListener("click", () => {
+//                // Draw some fancy animation effects!
+//                alert("jnjnjn jnjnjn")
+//            });
+        }
+
+        static get observedAttributes() { return ["canvas"]; }
+
+        attributeChangedCallback(name, oldValue, newValue) {
+            // name will always be "country" due to observedAttributes
+            //this._countryCode = newValue;
+            this._updateRendering();
+        }
+        connectedCallback() {
+            this._updateRendering();
+        }
+        disconnectedCallback() {
+
+        }
+
+        makeCanvas(){
+            this._canvas = document.createElement('canvas');
+            this.appendChild(this._canvas);
+            return this._canvas;
+        }
+
+        resize(size){
+            if (!this._canvas) return;
+            this._canvas.width= size;
+            this._canvas.height= size;
+        }
+
+        get width() {
+            return this._canvas.width;
+        }
+
+        get height() {
+            return this._canvas.height;
+        }
+
+
+    //.getBoundingClientRect
+        //        set country(v) {
+//            this.setAttribute("country", v);
+//        }
+
+//        get country() {
+//            return this._countryCode;
+//        }
+//        set country(v) {
+//            this.setAttribute("country", v);
+//        }
+
+
+        _updateRendering() {
+            // Left as an exercise for the reader. But, you'll probably want to
+            // check this.ownerDocument.defaultView to see if we've been
+            // inserted into a document with a browsing context, and avoid
+            // doing any work if not.
+        }
+    }
+
+    customElements.define("dicom-roi-editor", DicomRoiEditor);
+
+    // Use
+    // <canvas is="dicom-roi-editor"></canvas>
+    // In code:
+    //const dicomRoiEditor = document.createElement("canvas", { is: "dicom-roi-ediitor" });
+    //dicomRoiEditor.textContent = "Click me!";
+    //
+    //const dicomRoiEditor2 = new DicomRoiEditor();
+    //console.log(dicomRoiEditor2.localName);          // will output "canvas"
+    //console.log(plasticButton2.getAttribute("is")); // will output "dicom-roi-editor"
+
+</script>

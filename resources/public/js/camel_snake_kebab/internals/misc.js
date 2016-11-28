@@ -60,4 +60,4 @@ return clojure.string.capitalize.call(null,s);
 }
 });
 
-//# sourceMappingURL=misc.js.map?rel=1478875890854
+//# sourceMappingURL=misc.js.map?rel=1480335662373

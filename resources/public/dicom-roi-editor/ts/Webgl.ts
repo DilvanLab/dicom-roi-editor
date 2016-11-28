@@ -27,7 +27,7 @@ module br.usp.dilvanLab.roi3DEditor {
             this.tool = 'gradient'
         }
 
-        getMousePos(canvas:HTMLCanvasElement, event:MouseEvent) {
+        static getMousePos(canvas:HTMLCanvasElement, event:MouseEvent) {
             var rect = canvas.getBoundingClientRect();
             return {
                 x: event.clientX - rect.left,
@@ -79,7 +79,7 @@ module br.usp.dilvanLab.roi3DEditor {
                 if (!this.mouseIsDown) return;
                 //if (!(isActive && imagesQueued)) return;
 
-                this.mouse = this.getMousePos(drawing, event);
+                this.mouse = Context.getMousePos(drawing, event);
                 //this.mouseX = 0.0 + event.getRelativeX(drawing.getElement());
                 //this.mouseY = 0.0 + event.getRelativeY(drawing.getElement());
 
@@ -100,7 +100,7 @@ module br.usp.dilvanLab.roi3DEditor {
             };
 
             drawing.onmousedown = (event:MouseEvent) => {
-                this.mouse = this.getMousePos(drawing, event)
+                this.mouse = Context.getMousePos(drawing, event)
                 //   mouseX = 0.0 + event.getRelativeX(drawing.getElement());
                 //   mouseY = 0.0 + event.getRelativeY(drawing.getElement());
 
@@ -144,7 +144,7 @@ module br.usp.dilvanLab.roi3DEditor {
 
             drawing.onmouseup = (event:MouseEvent) => {
 
-                this.mouse = this.getMousePos(drawing, event)
+                this.mouse = Context.getMousePos(drawing, event)
                 //alert('Mouse Up'+this.mouse);
 
                 if (!this.mouseIsDown) return;
@@ -222,7 +222,7 @@ module br.usp.dilvanLab.roi3DEditor {
         whichPlane(event:MouseEvent):number {
             const canvas = this.viewer.gl.canvas
             if (this.viewer.activePlane == ALL) {
-                const pos = this.context.getMousePos(canvas, event)
+                const pos = Context.getMousePos(canvas, event)
                 console.log('getPlane: ' + pos.x + ' ' + pos.y + ' canvas: ' + canvas.width + ' ' + canvas.height)
                 if (pos.x < canvas.width / 2 && pos.y < canvas.height / 2) return AXIAL;
                 if (pos.x > canvas.width / 2 && pos.y > canvas.height / 2) return -1;
@@ -234,11 +234,7 @@ module br.usp.dilvanLab.roi3DEditor {
         }
 
         getMouse(event:MouseEvent) {
-            const rect = this.viewer.gl.canvas.getBoundingClientRect();
-            const ret = {
-                x: event.clientX - rect.left,
-                y: event.clientY - rect.top
-            };
+            const ret = Context.getMousePos(this.viewer.gl.canvas, event)
 
             // Coordinates are specific to each plane
             // If all planes are showing, they have to be corrected

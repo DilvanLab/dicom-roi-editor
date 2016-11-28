@@ -56,5 +56,5 @@ goog.addDependency("../re_frame/std_interceptors.js", ['re_frame.std_interceptor
 goog.addDependency("../re_frame/subs.js", ['re_frame.subs'], ['re_frame.interop', 're_frame.registrar', 'cljs.core', 're_frame.utils', 're_frame.loggers', 're_frame.db']);
 goog.addDependency("../re_frame/cofx.js", ['re_frame.cofx'], ['re_frame.interceptor', 're_frame.registrar', 'cljs.core', 're_frame.loggers', 're_frame.db']);
 goog.addDependency("../re_frame/core.js", ['re_frame.core'], ['re_frame.interop', 're_frame.interceptor', 're_frame.events', 're_frame.fx', 're_frame.registrar', 'cljs.core', 're_frame.router', 're_frame.std_interceptors', 're_frame.loggers', 're_frame.subs', 're_frame.cofx', 're_frame.db']);
-goog.addDependency("../roiEditor/core.js", ['roiEditor.core'], ['cljsjs.material_ui', 'reagent.core', 'cljs.core', 'cljs_react_material_ui.reagent', 'cljs_react_material_ui.core', 'cljs_react_material_ui.icons', 're_frame.core']);
+goog.addDependency("../roiEditor/core.js", ['roiEditor.core'], ['cljsjs.material_ui', 'reagent.core', 'cljs.core', 'goog.events.EventTarget', 'goog.events.EventType', 'cljs_react_material_ui.reagent', 'cljs_react_material_ui.core', 'cljs_react_material_ui.icons', 'goog.events', 're_frame.core']);
 goog.addDependency("../roiEditor/dev.js", ['roiEditor.dev'], ['cljs.core', 'figwheel.client', 'roiEditor.core']);

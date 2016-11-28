@@ -56,4 +56,4 @@ try{return (reagent.dom.server.module.call(null)["renderToStaticMarkup"])(reagen
 }finally {reagent.impl.util._STAR_non_reactive_STAR_ = _STAR_non_reactive_STAR_22406;
 }});
 
-//# sourceMappingURL=server.js.map?rel=1478875876146
+//# sourceMappingURL=server.js.map?rel=1480335648777
