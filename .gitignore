@@ -7,9 +7,9 @@
 *.iml
 .idea
 
-
+js/
 .DS_Dtore
 .idea
-target
+target/
 .vscode
 pom.xml
