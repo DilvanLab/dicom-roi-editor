@@ -1,0 +1,175 @@
+<!--
+    Copyright (c) Dilvan A. Moreira 2015. All rights reserved.
+    This file is part of ePad.
+
+     ePad is free software: you can redistribute it and/or modify
+     it under the terms of the GNU General Public License as published by
+     the Free Software Foundation, either version 3 of the License.
+
+     ePad is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     GNU General Public License for more details.
+
+     You should have received a copy of the GNU General Public License
+     along with ePad.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<link rel="import" href="../polymer/polymer.html">
+
+<!--
+A Polymer component to visualize Dicom images and edit 2D and 3D ROI (Regions of Interest).
+It allows the edition of 2D (points, lines, polygons, etc) and 3D (masks) ROIs in the axial, frontal and sagittal views.
+
+Example:
+
+       <dicom-roi-editor
+        canvas = '#epad-canvas'
+        pref = '{
+          overrideCenter: 0,
+          overrideWidth: 0,
+          windowOverride: false
+          }'
+        series = '{
+          bitsStored: "12",
+          columns: 512,
+          numberOfImages: 100,
+          pixelRepresentation: "0",
+          pixelSpacing: "0.974609375\\0.974609375",
+          rescaleIntercept: "-1000",
+          rescaleSlope: "1",
+          rows: 512,
+          sliceThickness: "5.0",
+          windowCenter: "00040\\00040",
+          windowWidth: "00400\\00400"
+          }'
+        >
+    </dicom-roi-editor>
+
+    <script>
+           document.querySelector('#load-button').addEventListener('click', function() {
+              var editor = document.querySelector('dicom-roi-editor').editor;
+              // Read png files
+              for (var i = 0; i < 7; i ++) {
+                  var url = "1_2_752_24_7_19011385_453825/1_2_840_113704_1_111_424_1207241028_7/filename" + i +".png";
+                  editor.loadPngTexture(i, url);
+            }
+        });
+   </script>
+
+@demo
+-->
+<dom-module id="dicom-roi-editor">
+
+  <style> </style>
+  <template>
+    <content></content>
+  </template>
+
+</dom-module>
+
+<script type="text/javascript" src="js/app.js"></script>
+
+<script>
+
+  Polymer({
+      is: "dicom-roi-editor",
+      properties: {
+          canvas: {type: Object, value: {}},
+          prefs: {type: String, value:null},
+          series: {type: String, value: null},
+
+          AXIAL: {type: Number, value: br.usp.dilvanLab.roi3DEditor.AXIAL, readonly:true},
+          FRONTAL: {type: Number, value: br.usp.dilvanLab.roi3DEditor.FRONTAL, readonly:true},
+          SAGITTAL: {type: Number, value: br.usp.dilvanLab.roi3DEditor.SAGITTAL, readonly:true},
+          ALL: {type: Number, value: br.usp.dilvanLab.roi3DEditor.ALL, readonly:true},
+
+          windowingcenter: {type: String, observer: '_updateRendering'},
+          windowingwidth: {type: String, observer: '_updateRendering'},
+          activeplane: {type: String, observer: '_updateRendering'},
+
+          axial: {type: String, observer: '_updateRendering'},
+          frontal: {type: String, observer: '_updateRendering'},
+          sagittal: {type: String, observer: '_updateRendering'},
+      },
+      behaviors: [],
+
+      attached: function () {
+          // `attached` fires once the element and its parents have been inserted
+          // into a document.
+          //this._canvas = null;
+
+          this.makeCanvas();
+
+          this._editor = new br.usp.dilvanLab.roi3DEditor.WebGLViewerImpl(this._canvas, 0, JSON.parse(this.prefs), JSON.parse(this.series));
+          this._canvas.editor = this._editor;
+
+          this.canvas = this._canvas;
+          this.editor = this._editor;
+
+          this._updateRendering();
+      },
+      // Element Behavior
+
+      /**
+       * The `seed-element-lasers` event is fired whenever `fireLasers` is called.
+       *
+       * @event test not real
+       * @detail {{sound: String}}
+       */
+
+      setPlane: function(i, obj){
+          this._editor.setX(i, obj.x);
+          this._editor.setY(i, obj.y);
+          this._editor.setZoom(i, obj.zoom);
+          this._editor.setImageCoord(i, obj.imgCoord);
+      },
+
+      upd: function(){
+          alert("upd");
+          this._updateRendering();
+      },
+
+      _updateRendering: function() {
+          if (!this._editor) return;
+          this._editor.activePlane = parseInt(this.activeplane);
+          this._editor.windowingCenter = parseInt(this.windowingcenter);
+          this._editor.windowingWidth = parseInt(this.windowingwidth);
+
+          //console.log(parseInt(this.getAttribute('windowingCenter')))
+          //console.log("--------")
+          let axial = JSON.parse(this.axial);
+          this.setPlane(br.usp.dilvanLab.roi3DEditor.AXIAL, axial);
+          let sagittal = JSON.parse(this.sagittal);
+          this.setPlane(br.usp.dilvanLab.roi3DEditor.SAGITTAL, sagittal);
+          let frontal = JSON.parse(this.frontal);
+          this.setPlane(br.usp.dilvanLab.roi3DEditor.FRONTAL, frontal);
+
+          //alert(this._editor.windowingCenter);
+          //alert(this.getAttribute('windowingCenter'));
+          //alert(JSON.stringify(frontal));
+          this._editor.drawImage();
+      },
+
+      makeCanvas: function(){
+          //let shadowRoot = this.attachShadow({mode: 'open'});
+
+          this._canvas = document.createElement('canvas');
+          this.appendChild(this._canvas)
+      },
+
+      resize: function(size){
+          if (!this._canvas) return;
+          this._canvas.width= size;
+          this._canvas.height= size;
+          this._updateRendering();
+      }
+
+
+
+  //      setCursorRadius: function(radius) {editor.cursorRadius = radius},
+//      showSphere: function() {editor.showSphere()},
+//      setCursorCenter: function(plane, x, y) {editor.setCursorCenter(plane, x, y)},
+//      stampSphere: function() {editor.stampSphere()}
+  });
+
+</script>

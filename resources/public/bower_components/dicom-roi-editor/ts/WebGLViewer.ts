@@ -50,47 +50,47 @@ module br.usp.dilvanLab.roi3DEditor {
             this.framebuffer = gl.createFramebuffer();
             this.texture = gl.createTexture();
 
-            gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, this.framebuffer);
-            gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, this.texture);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
+            gl.bindTexture(gl.TEXTURE_2D, this.texture);
 
             // Clamp textures to the edge
-            gl.texParameteri(WebGLRenderingContext.TEXTURE_2D, WebGLRenderingContext.TEXTURE_WRAP_S, WebGLRenderingContext.CLAMP_TO_EDGE);
-            gl.texParameteri(WebGLRenderingContext.TEXTURE_2D, WebGLRenderingContext.TEXTURE_WRAP_T, WebGLRenderingContext.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
             for (let i = 0; i < filters.length; i += 2)
-                gl.texParameteri(WebGLRenderingContext.TEXTURE_2D, filters[i], filters[i + 1]);
+                gl.texParameteri(gl.TEXTURE_2D, filters[i], filters[i + 1]);
 
-            gl.texImage2D(WebGLRenderingContext.TEXTURE_2D, 0, WebGLRenderingContext.RGBA, width, height, 0, WebGLRenderingContext.RGBA,
-                WebGLRenderingContext.UNSIGNED_BYTE, null);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA,
+                gl.UNSIGNED_BYTE, null);
 
             // gl.texImageRGBA2D(width, height);
-            gl.generateMipmap(WebGLRenderingContext.TEXTURE_2D);
+            gl.generateMipmap(gl.TEXTURE_2D);
 
             // Init Render Buffer
             let renderbuffer = gl.createRenderbuffer();
-            gl.bindRenderbuffer(WebGLRenderingContext.RENDERBUFFER, renderbuffer);
+            gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer);
             // renderbuffer.bind();
             // renderbuffer.renderbufferStorage(width, height);
-            gl.renderbufferStorage(WebGLRenderingContext.RENDERBUFFER, WebGLRenderingContext.DEPTH_COMPONENT16, width,
+            gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width,
                 height);
 
             // Attach texture to buffer
-            gl.framebufferTexture2D(WebGLRenderingContext.FRAMEBUFFER, WebGLRenderingContext.COLOR_ATTACHMENT0,
-                WebGLRenderingContext.TEXTURE_2D, this.texture, 0);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0,
+                gl.TEXTURE_2D, this.texture, 0);
 
             // gl.framebufferTexture2D(texture);
             // Attach the renderBuffer
-            gl.framebufferRenderbuffer(WebGLRenderingContext.FRAMEBUFFER, WebGLRenderingContext.DEPTH_ATTACHMENT,
-                WebGLRenderingContext.RENDERBUFFER, renderbuffer);
+            gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT,
+                gl.RENDERBUFFER, renderbuffer);
 
             // To be able to write off screen, we create a renderBuffer and attach
             // it to a framebuffer.
 
             // Unbind resources
-            gl.bindTexture(WebGLRenderingContext.TEXTURE_2D, null);
-            gl.bindRenderbuffer(WebGLRenderingContext.RENDERBUFFER, null);
+            gl.bindTexture(gl.TEXTURE_2D, null);
+            gl.bindRenderbuffer(gl.RENDERBUFFER, null);
             // renderbuffer.unbind();
-            gl.bindFramebuffer(WebGLRenderingContext.FRAMEBUFFER, null);
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
             gl.deleteRenderbuffer(renderbuffer);
         }
@@ -131,9 +131,9 @@ module br.usp.dilvanLab.roi3DEditor {
 
         constructor(gl:WebGLRenderingContext, width:number, height:number, shader:WebGLProgram) {
             this.shader = shader;
-            this.imgTexture = new ImgTexture(gl, width, height, WebGLRenderingContext.TEXTURE_MIN_FILTER,
-                WebGLRenderingContext.LINEAR_MIPMAP_NEAREST, WebGLRenderingContext.TEXTURE_MIN_FILTER,
-                WebGLRenderingContext.LINEAR_MIPMAP_LINEAR);
+            this.imgTexture = new ImgTexture(gl, width, height, gl.TEXTURE_MIN_FILTER,
+                gl.LINEAR_MIPMAP_NEAREST, gl.TEXTURE_MIN_FILTER,
+                gl.LINEAR_MIPMAP_LINEAR);
         }
 
         get changed() {return this._changed}
@@ -181,7 +181,7 @@ module br.usp.dilvanLab.roi3DEditor {
         //isImageLoaded(i:number):boolean;
         //handleLoadedTexture(i:number, textureImage:HTMLImageElement):void;
 
-        setActiveImage(plane:number, coord:number):void;
+        setImageCoord(plane:number, coord:number):void;
         setPlanesCoord(plane:number, x:number, y:number):void;
         setX(plane:number, x:number):void;
         setY(plane:number, y:number):void;

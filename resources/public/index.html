@@ -3,17 +3,22 @@
   <head>
     <meta charset="utf-8">
     <title>Example</title>
-    <link rel="stylesheet" href="index.css">
     <link rel="stylesheet" type="text/css" href="style.css">
+
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="shortcut icon" href="/images/favicon.ico">
-    <link rel="import" href="dicom-roi-editor/index.html">
+    <!--link rel="shortcut icon" href="/images/favicon.ico"-->
+
+    <script src="bower_components/webcomponentsjs/webcomponents-lite.js"></script>
+
+    <link rel="import" href="bower_components/dicom-roi-editor/dicom-roi-editor.html">
 
   </head>
   <body onresize="resizeCanvas()">
+
     <div id="app">
       <h1>Dicom Roi Editor</h1>
     </div>
+
     <script src="js/client.js"></script>
     <script>
         window.onload = function () {
@@ -23,13 +28,13 @@
         function resizeCanvas() {
             const divs = document.getElementsByClassName("editor-holder");
             for (let i=0; i<divs.length; i++) {
-                const e = divs[i];
-                const editor = e.firstChild;// .document.getElementById("epad-canvas");
-                editor.resize(e.clientWidth);
-
-//                //let x = Math.max(e.clientWidth, e.clientHeight)
-//                _canvas.width = e.clientWidth;
-//                _canvas.height = e.clientWidth;//_div.clientHeight;
+                const c = divs[i].childNodes;
+                for(let j = 0; j < c.length; j++) {
+                    if ( c[j].canvas) {
+                        c[j].resize(divs[i].clientWidth);
+                        break;
+                    }
+                }
             }
         }
     </script>

@@ -17,10 +17,6 @@
 
   (:import  (goog.events EventTarget EventType)))
 
-;; trigger a dispatch every second
-;(defonce time-updater (js/setInterval
-;                        #(dispatch [:timer (js/Date.)]) 1000]))
-
 ;;   Browser events
 ;;
 (def MOUSE-DOWN EventType.MOUSEDOWN)
@@ -39,23 +35,6 @@
 (def FRONTAL js/br.usp.dilvanLab.roi3DEditor.FRONTAL)
 (def SAGITTAL js/br.usp.dilvanLab.roi3DEditor.SAGITTAL)
 
-(def pref
-  {:overrideCenter 0,
-   :overrideWidth  0,
-   :windowOverride false})
-
-(def series {
-             :bitsStored          "16",
-             :columns             512,
-             :numberOfImages      145,
-             :pixelRepresentation "1",
-             :pixelSpacing        "0.703125\\0.703125",
-             :rescaleIntercept    "-1024",
-             :rescaleSlope        "1",
-             :rows                512,
-             :sliceThickness      "1.25",
-             :windowCenter        "00040\\00040",
-             :windowWidth         "00400\\00400"})
 
 (def lstPngs [
               "1.2.826.0.1.3680043.8.420.16553737991475343282684803816940891307.png",
@@ -205,224 +184,231 @@
               "1.2.826.0.1.3680043.8.420.32592795188011088359506779691378232430.png"])
 
 (def last-mouse (atom {:x 0 :y 0}))
-(def mouse-is-down (atom false))
+(def is-mouse-down (atom false))
+
+(def pref
+  {:overrideCenter 0,
+   :overrideWidth  0,
+   :windowOverride false})
+
+(def series {:bitsStored          "16",
+             :columns             512,
+             :numberOfImages      145,
+             :pixelRepresentation "1",
+             :pixelSpacing        "0.703125\\0.703125",
+             :rescaleIntercept    "-1024",
+             :rescaleSlope        "1",
+             :rows                512,
+             :sliceThickness      "1.25",
+             :windowCenter        "00040\\00040",
+             :windowWidth         "00400\\00400"})
 
 (def initial-state
   {:views [{:prefs pref
             :series series
             :pngs lstPngs
-            :editor nil}]
-   :context {:last-mouse {:x 0 :y 0}
-             :mouse-is-down false}})
+            :tool "gradient"
+            :active-plane ALL
+            :windowing-center (js/parseInt (:windowCenter series))
+            :windowing-width (js/parseInt (:windowWidth series))
+            :axial    {:x 0.5 :y 0.5 :zoom 1 :imgCoord 0.5}
+            :sagittal {:x 0.5 :y 0.5 :zoom 1 :imgCoord 0.5}
+            :frontal  {:x 0.5 :y 0.5 :zoom 1 :imgCoord 0.5}}]})
 
 (defn current-view [db] (nth (:views db) 0))
+
+(defn clip [[a b] x] (max (min x b) a))
+
+(defn update-all [map a b & args]
+  (let [num (count args)
+        map1 (update-in map a b)]
+    (if (even? num)
+      (if (zero? num)
+        map1
+        (apply update-all map1 args))
+      (throw (js/Error. "update-all has one db and pairs of path and function.")))))
+
+(defn assoc-all [map a b & args]
+  (let [num (count args)
+        map1 (assoc-in map a b)]
+    (if (even? num)
+      (if (zero? num)
+        map1
+        (apply assoc-all map1 args))
+      (throw (js/Error. "assoc-all has one db and pairs of path and function.")))))
 
 ;; -------------------------------
 ; [:canvas-event mode
 
-(defn get-mouse-pos [editor event]
-  (let [canvas (-> editor .-gl .-canvas)
-        rect (.getBoundingClientRect canvas)]
+(defn get-mouse-pos [event]
+  (let [rect (.getBoundingClientRect (.-currentTarget event))]
     {:x (- event.clientX (.-left rect))
      :y (- event.clientY (.-top rect))}))
 
+(defn canvas [event]
+  (.-currentTarget event))
 
+(defn get-editor [event]
+  (.-editor (.-currentTarget event)))
 
-(defn get-mouse [editor event]
-  (let [canvas (-> editor .-gl .-canvas)
-        {:keys [x y]} (get-mouse-pos editor event)]
+(defn active-plane [event]
+  (.-activePlane (.-editor (.-currentTarget event))))
 
+(defn active-plane? [event plane]
+  (= plane (.-activePlane (.-editor (.-currentTarget event)))))
+
+(defn get-mouse [event]
+  (let [canvas (canvas event)
+        {:keys [x y]} (get-mouse-pos event)]
+    ;(.log js/console canvas)
     ;; Coordinates are specific to each plane
     ;; If all planes are showing, they have to be corrected
-    (if (= (.-activePlane editor) ALL)
+    (if (active-plane? event ALL)
       (let [width (/ (.-width canvas) 2)
             height (/ (.-height canvas) 2)]
         {:x (if (> x width) (- x width) x)
          :y (if (> y height) (- y height) y)})
       {:x x :y y})))
 
-(defn which-plane [editor event]
-  (let [canvas (-> editor .-gl .-canvas)
+(defn which-plane [event]
+  (let [canvas (canvas event)
         c-width (/ (.-width canvas) 2)
-        c-height (/ (.-height canvas) 2)
-        active-plane (.-activePlane editor)]
-    (if (= active-plane ALL)
-      (let [pos (get-mouse-pos editor event)]
+        c-height (/ (.-height canvas) 2)]
+    (if (active-plane? event ALL)
+      (let [pos (get-mouse-pos event)]
         (cond
           ($(:x pos) < c-width && (:y pos) < c-height) AXIAL
           ($(:x pos) > c-width && (:y pos) > c-height) -1
           ($(:x pos) > c-width) FRONTAL
           ($(:y pos) > c-height) SAGITTAL
           :else -1))
-      active-plane)))
+      (active-plane event))))
 
 (defmulti canvas-event
           (fn [_ mode event]
-            ;(js/alert (str (-> (:editor db) .-context .-tool) " & " event))
-            (if (= event.type EventType.DBLCLICK)
-              [EventType.DBLCLICK]
+            (if (= event.type DBL-CLICK)
+              [DBL-CLICK]
               [mode event.type])))
 
-(defmethod canvas-event [EventType.DBLCLICK] [db _ event]
-  (let [editor (:editor (current-view db))]
-    (if (= (.-activePlane editor) ALL)
-      (set! (.-activePlane editor) (which-plane editor event))
-      (set! (.-activePlane editor) ALL))
-    (.drawImage editor)))
-
+(defmethod canvas-event [DBL-CLICK] [db _ event]
+  (update-in db
+             [:views 0 :active-plane] #(if (= % ALL) (which-plane event) ALL)))
 
 ;;default handling
 (defmethod canvas-event :default [db mode event]
-  (println (str "canvas-event: " mode " " (.-type event)))) ;(:context :tool db) "="))) ;event-type)))
+  (.log js/console  (str "canvas-event: " mode " " (.-type event))))
 
 ;;-------------------------------------------------------------
 ;;   Tools implementation
 ;;
 
+(defn plane-name [x]
+  (condp = x
+    AXIAL :axial
+    FRONTAL :frontal
+    SAGITTAL :sagittal
+    :else -1))
 ;;
 ;;    Move
 ;;
-(defn deltaX [editor x old-x]
-  (let [canvas (-> editor .-gl .-canvas)
-        rect (.getBoundingClientRect canvas)]
-    (- (- old-x (.-left rect)) (- x (.-left rect)))))
-
-(defn deltaY [editor x old-x]
-  (let [canvas (-> editor .-gl .-canvas)
-        rect (.getBoundingClientRect canvas)]
-    (- (- old-x (.-top rect)) (- x (.-top rect)))))
-
 (defmethod canvas-event ["move" MOUSE-MOVE] [db mode event]
-  (let [;event (.getBrowserEvent g-event)
-        editor (:editor (current-view db))
-        plane (which-plane editor event)
-        mouse (get-mouse-pos editor event)
-        mult (if (= ALL (.-activePlane editor)) 2 1)
-        deltaX (* mult (.pixels2Units editor plane
-                                      ;(- (:x mouse) (:x (-> db :context :last-mouse)))
+  (let [plane (which-plane event)
+        mult (if (= ALL (active-plane event)) 2 1)
+        deltaX (* mult (.pixels2Units (get-editor event) plane
                                       (.-movementX (.getBrowserEvent event))))
-                                      ;(deltaX editor (.-clientX event) (+ (.-clientX event) (.-movementX (.getBrowserEvent event))))
-                                      ;(- (.-clientX event) (.-mouseDownX event));(:x (-> db :context :last-mouse)))))
-                                      ;event.movementX))
-        deltaY (* mult (.pixels2Units editor plane
-                                      ;(- (:y mouse) (:y (-> db :context :last-mouse))))
+        deltaY (* mult (.pixels2Units (get-editor event) plane
                                       (.-movementY (.getBrowserEvent event)))
-                                      ;(deltaY editor (.-clientY event) (+ (.-clientY event) (.-movementY (.getBrowserEvent event))))
-
-  ;(- (.-clientY event) (.-mouseDownY event)));(:y (-> db :context :last-mouse))))
-                                      ;event.movementY)))] ;))))]
                   -1)]
-
     (cond (not= plane -1)
-          (do
-            (.setX editor plane (- (.getX editor plane) deltaX))
-            (.setY editor plane (- (.getY editor plane) deltaY))
-            (.drawImage editor)
-            (assoc-in db [:context :last-mouse] mouse)))))
+          (let
+            [db1 (update-in db
+                           [:views 0 (plane-name plane) :x] #(- % deltaX))]
+            (update-in db1
+              [:views 0 (plane-name plane) :y] #(- % deltaY))))))
 
 ;;
 ;;   Zoom
 ;;
 (defmethod canvas-event ["zoom" MOUSE-MOVE] [db mode event]
-  (let [;m-old (→ db :context :last-mouse)
-        editor (:editor (current-view db))
-        ;m-now (get-mouse-pos editor event)
-        plane (which-plane editor event)
-        ;delta («(((:x m-now) - (:x m-old)) + ((:y m-now) - (:y m-old))) / 4)
-        delta (/ (+ (.-movementX (.getBrowserEvent event));(- (:x m-now) (:x m-old))
-                    (.-movementY (.getBrowserEvent event)));(- (:y m-now) (:y m-old)))
-                 4)
-        ;zoom (« (.getZoom editor plane) + delta / (→ editor .-gl .-canvas .-width))
-        zoom (+ (.getZoom editor plane)
-                (/ delta
-                   (→ editor .-gl .-canvas .-width)))]
-    (.setZoom editor plane zoom)
-    (.drawImage editor)))
+  (let [plane (which-plane event)
+        delta (/ (+ (.-movementX (.getBrowserEvent event))
+                    (.-movementY (.getBrowserEvent event)))
+                 4)]
+    (update-in db
+               [:views 0 (plane-name plane) :zoom] #(+ % (/ delta (.-width (canvas event)))))))
 
 (defmethod canvas-event ["zoom" KEY-DOWN] [db mode event]
-  (let [editor (:editor (current-view db))
-        code (.-charCode event)]
-    (js/alert code)
+  (let [code (.-charCode event)]
     (case code
       ;UP_ARROW
-      38 (.setZoom editor AXIAL (/ (.getZoom editor AXIAL) 0.9))
+      38  (update-in db [:views 0 :axial :zoom] #(/ % 0.9))
       ;DOWN_ARROW
-      40 (.setZoom editor AXIAL (* (.getZoom editor AXIAL) 0.9))
+      40  (update-in db [:views 0 :axial :zoom] #(* % 0.9))
       ;RIGHT_ARROW
-      39 (.setActiveImage editor AXIAL (js/Math.max(js/Math.min(+ (.getImageCoord editor AXIAL) (/ 1.0 (.-imageNumber editor))) 1) 0))
+      39 (update-in db [:views 0 :axial :imgCoord] #(clip [0 1] (+ % (/ 1.0 (-> (current-view db) :series :numberOfImages)))))
       ;LEFT_ARROW
-      37 (.setActiveImage editor AXIAL (js/Math.max(js/Math.min(+ (.getImageCoord editor AXIAL) (/ 1.0 (.-imageNumber editor))) 1) 0)))
-    (.drawImage editor)))
+      37 (update-in db [:views 0 :axial :imgCoord] #(clip [0 1] (- % (/ 1.0 (-> (current-view db) :series :numberOfImages))))))))
+
+
+(defn set-other-planes [db event]
+  (let [mouse (get-mouse event)
+        plane (which-plane event)
+        pt (.toUnits (get-editor event) plane (:x mouse) (:y mouse))
+        [plane1 coord1 plane2 coord2]
+        (condp = plane
+           AXIAL    [:sagittal (.-x pt)                        :frontal (.-y pt)]
+           FRONTAL  [:sagittal (.xCoord (get-editor event) (.-x pt))       :axial (- 1 (.-y pt))]
+           SAGITTAL [:frontal  (.xCoord (get-editor event) (- 1 (.-x pt))) :axial (- 1 (.-y pt))]
+           :else    [nil nil nil nil])]
+    (cond (not= plane1 nil)
+          (assoc-all db
+                     [:views 0 plane1 :imgCoord] coord1
+                     [:views 0 plane2 :imgCoord] coord2))))
 
 
 ;;
 ;;    Scroll
 ;;
 (defmethod canvas-event ["scroll" MOUSE-DOWN] [db mode event]
-  (let [editor (:editor (current-view db))
-        mouse (get-mouse editor event)
-        plane (which-plane editor event)]
-    (cond (not= plane -1)
-          (do
-            (.setPlanesCoord editor plane (:x mouse) (:y mouse))
-            ;(println (:x mouse) "- " (:y mouse))
-            (.drawImage editor)))))
+  (set-other-planes db event))
 
 (defmethod canvas-event ["scroll" MOUSE-MOVE] [db mode event]
-  (let [editor (:editor (current-view db))
-        mouse (get-mouse editor event)
-        plane (which-plane editor event)]
-    (cond (not= plane -1)
-          (do
-            (.setPlanesCoord editor plane (:x mouse) (:y mouse))
-            ;(println (:x mouse) "- " (:y mouse))
-            (.drawImage editor)))))
+  (set-other-planes db event))
 
 (defmethod canvas-event ["scroll" WHEEL] [db mode g-event]
-  (let [event (.getBrowserEvent g-event)
-        editor (:editor (current-view db))
-        plane (which-plane editor event)
-        clip #(max (min % 1) 0)]
+  (let [;;   It shouldn' be this way. Why do we have to call the
+        ;;   browser event to get the deltaY?
+        event (.getBrowserEvent g-event)
+        plane (which-plane g-event)]
     (cond (not= plane -1)
-          (let [plane2act (if (= (.-activePlane editor) ALL)
-                            plane
-                            (.-activePlane editor))]
-            (.setActiveImage editor plane2act
-                             (clip
-                               (+ (.getImageCoord editor plane2act)
-                                  ;;   It shouldn' be this way. Why do we have to call the
-                                  ;;   browser event to get the deltaY?
-                                  (/ (if (> (.-deltaY event) 0) 1 -1)
-                                     (.-imageNumber editor)))))
-            (.drawImage editor)))))
-
+          (let [plane2act (if (= (-> (current-view db) :active-plane) ALL)
+                              plane
+                              (-> (current-view db) :active-plane))]
+            (update-in db
+                       [:views 0 (plane-name plane2act) :imgCoord]
+                       #(clip [0 1]
+                          (+ % (/ (if (> (.-deltaY event) 0) 1 -1)
+                                  (-> (current-view db) :series :numberOfImages)))))))))
 
 ;;
 ;;   Gradient
 ;;
 
-(defn set-windowing! [editor center width]
-  (if ($ center = 0 && width = 0) ;and (= 0 center) (= 0 width)
-    (do
-      (set! (.-windowingCenter editor) (.-defaultWC editor))
-      (set! (.-windowingWidth editor)  (.-defaultWW editor)))
-    (do
-      (set! (.-windowingCenter editor) center)
-      (set! (.-windowingWidth editor)  width))))
+;(defn set-windowing [editor1 center width]
+;  (if (and (= 0 center) (= 0 width))
+;    ({:center (.-defaultWC @editor) :width (.-defaultWW @editor)})
+;    ({:center  center :width width})))
 
 (defmethod canvas-event ["gradient" MOUSE-MOVE] [db mode g-event]
   (let [event (.getBrowserEvent g-event)
-        editor (:editor (current-view db))
-        canvas (-> editor .-gl .-canvas)
+        editor (get-editor g-event)
+        canvas (canvas g-event)
         deltaWW ($ (4 * (.-movementX event) / (.-width  canvas) * (.-defaultWW editor)))
         deltaWC ($ (4 * (.-movementY event) / (.-height canvas) * (.-defaultWC editor)))]
-        ;deltaWW2 (* (/ (* 4 (.-movementX event)) (.-width  canvas)) (.-defaultWW editor))
-        ;deltaWC2 (* (/ (* 4 (.-movementY event)) (.-height canvas)) (.-defaultWC editor))]
-    ;(js/alert (in/form '($ (4 * (.-movementX event)) / (.-width canvas) * (.-defaultWW editor))))
-    ;(cond (or (not= deltaWW deltaWW2) (not= deltaWC deltaWC2))
-    ;      (js/alert (str " Not equal!" deltaWW " " deltaWW2 " & " deltaWC " " deltaWC2))]
-    (set-windowing! editor (+ (.-windowingCenter editor) deltaWC) (+ (.-windowingWidth editor) deltaWW))
-    (.drawImage editor)))
+    (update-all
+      db
+      [:views 0 :windowing-center] #(if (<= (+ % deltaWC) 0) (.-defaultWC editor) (+ % deltaWC))
+      [:views 0 :windowing-width]  #(if (<= (+ % deltaWW) 0) (.-defaultWW editor) (+ % deltaWW)))))
 
 ;;-----------------------
 
@@ -433,34 +419,24 @@
            lstPngs))
   (js/resizeCanvas))
 
-(defn get-pos [canvas event]
-  (let [rect (.getBoundingClientRect canvas)]
-    {:x (- event.clientX (.-left rect))
-     :y (- event.clientY (.-top rect))}))
-
-
 (defn listen [element event-type fnt]
   (cond (= event-type MOUSE-DOWN)
         (gevents/listen element event-type
-                       (fn [evt]
-                         (try
-                           (get-pos element evt)
-                           (reset! last-mouse {:x evt.clientX :y evt.clientY});(get-pos element evt))
-                           (reset! mouse-is-down true))
-                         (fnt evt)))
+                        (fn [evt]
+                          (reset! last-mouse {:x evt.clientX :y evt.clientY})
+                          (reset! is-mouse-down true)
+                          (fnt evt)))
         (= event-type MOUSE-UP)
         (gevents/listen element event-type
                         (fn [evt]
-                          (try
-                            (get-pos element evt)
-                            (reset! mouse-is-down false))
+                          (reset! is-mouse-down false)
                           (fnt evt)))
         :else
         (gevents/listen element event-type
                         (fn [evt]
                           (set! (.-mouseDownX evt) (:x @last-mouse))
                           (set! (.-mouseDownY evt) (:y @last-mouse))
-                          (set! (.-mouseIsDown evt) @mouse-is-down)
+                          (set! (.-isMouseDown evt) @is-mouse-down)
                           (fnt evt)))))
 
 (defn glisten [element evt-type]
@@ -472,7 +448,6 @@
                              (.preventDefault evt))))
 
 (defn register-events [element]
- ; (let [glisten #]
     (glisten element MOUSE-DOWN)
     (glisten element MOUSE-UP)
     (glisten element MOUSE-MOVE)
@@ -481,18 +456,12 @@
     (glisten element KEY-DOWN)
     (glisten element WHEEL))
 
-(defn init [cnv {:keys [prefs series pngs]}]
-  (if-let [canvas (.makeCanvas (.getElementById js/document cnv))];(.-firstChild (.getElementById js/document cnv))]
-    (let [editor (js/br.usp.dilvanLab.roi3DEditor.WebGLViewerImpl. canvas, 0, (clj->js prefs), (clj->js series))]
-      ;(js/alert (.-className canvas))
-      (set! (.-activePlane editor) ALL)
-      (set! (.-context editor) (js/br.usp.dilvanLab.roi3DEditor.Context. editor))
-      (register-events canvas)
-
-      ;(.initDrawingHandlers (.-context editor))
-      (load-pics editor pngs)
-      editor)
-    (js/alert (str "Null editor: " cnv))))
+(defn init [id {:keys [pngs]}]
+  (if-let [ceditor (.getElementById js/document id)]
+    (do
+      (register-events (.-canvas ceditor))
+      (load-pics (.-editor ceditor) pngs))
+    (js/alert (str "Null editor: " id))))
 
 
 ;(defn init1 [cnv {:keys [prefs series pngs]}]
@@ -516,95 +485,56 @@
 (reg-event-db
   :canvas-event
   (fn [db [_ event]]
-    (let [editor (:editor (current-view db))
-          mode (-> editor .-context .-tool)
-          mouse-is-down (.-mouseIsDown event)] ;(-> db :context :mouse-is-down)]
-      ;(js/alert (.-mouseIsDown event))
-      (if-let
-        [new (condp = event.type
-               MOUSE-DOWN
-               (let [mouse (get-mouse-pos editor event)
-                     db2 (assoc-in db [:context :last-mouse] mouse)]
-                 (if mouse-is-down
-                   db2
-                   (let [db3 (assoc-in db2 [:context :mouse-is-down] true)]
-                     (cond (not (or event.shiftKey event.metaKey))
-                           (canvas-event db3 mode event))
-                     db3)))
-
-               MOUSE-MOVE
-               (cond mouse-is-down
-                     (if event.shiftKey
-                       (canvas-event db "zoom" event)
-                       (canvas-event db mode event)))
-
-               MOUSE-UP
-               (cond MOUSE-DOWN
-                     (let [db3 (assoc-in db [:context :mouse-is-down] false)]
-                       (cond (not (or event.shiftKey event.metaKey))
-                             (canvas-event db3 mode event))
-                       db3))
-
-               MOUSE-OUT
-               (canvas-event db mode event)
-
-               DBL-CLICK
-               (canvas-event db mode event)
-
-               WHEEL
-               (canvas-event db "scroll" event)
-
-               KEY-DOWN
-               (canvas-event db mode event)
-
-               db)]
-        new
-        db))))
+    (let [mode (-> (current-view db) :tool)]
+      (assoc-in
+        (if-let
+          [new (condp = event.type
+                 MOUSE-DOWN
+                 (cond (not (or event.shiftKey event.metaKey))
+                       (canvas-event db mode event))
+                 MOUSE-MOVE
+                 (cond (.-isMouseDown event)
+                       (if event.shiftKey
+                         (canvas-event db "zoom" event)
+                         (canvas-event db mode event)))
+                 WHEEL
+                 (canvas-event db "scroll" event)
+                 ; default
+                 (canvas-event db mode event))]
+          new
+          db)
+        [:views 0 :changes]
+        (rand-int 1009209299)))))
 
 (reg-event-db
   :load-imgs
-  (fn [db [_ [canvas-id series]]]
-    (assoc-in db
-      [:views 0 :editor] (init canvas-id series))))                    ;; what it returns becomes the new state
+  (fn [db [_ [editor-id series]]]
+    (init editor-id series)
+    (assoc db :change editor-id)))   ;; what it returns becomes the new state
 
 (reg-event-db
   :inc
   (fn [db _]
-    (let [editor (:editor (current-view db))
-          ;incn #(if (> (+ % 0.01) 0.99) 0.99 (+ % 0.01))
-          incn #(if ($ (% + 0.01) > 0.99) 0.99 ($ % + 0.01))
-          c (incn (.getImageCoord editor AXIAL))]
-      (.setActiveImage editor AXIAL c)
-      (.setActiveImage editor FRONTAL c)
-      (.setActiveImage editor SAGITTAL c)
-      (.drawImage editor)
-      db)))      ;; what it returns becomes the new state
+    (let [incn #(if (> (+ % 0.01) 0.99) 0.99 (+ % 0.01))]
+      (update-all db
+                  [:views 0 :axial :imgCoord] #(incn %)
+                  [:views 0 :frontal :imgCoord] #(incn %)
+                  [:views 0 :sagittal :imgCoord] #(incn %)))))
 
 (reg-event-db
   :dec
   (fn [db _]
-    (let [editor (:editor (current-view db))
-          decn #(if (< (- % 0.01) 0) 0 (- % 0.01))
-          c (decn (.getImageCoord editor AXIAL))]
-      (.setActiveImage editor AXIAL c)
-      (.setActiveImage editor FRONTAL c)
-      (.setActiveImage editor SAGITTAL c)
-      (.drawImage editor)
-      db)))      ;; what it returns becomes the new state
+    (let [decn #(if (< (- % 0.01) 0) 0 (- % 0.01))]
+      (update-all db
+                  [:views 0 :axial :imgCoord] #(decn %)
+                  [:views 0 :frontal :imgCoord] #(decn %)
+                  [:views 0 :sagittal :imgCoord] #(decn %)))))
 
 (reg-event-db
   :change-mode
-  (fn [db [_ value]]
-    (set! (-> (:editor (current-view db)) .-context .-tool) value)
-    (assoc db :change value)))      ;; what it returns becomes the new state
-
-;(reg-event-db
-;  :time-color                     ;; usage:  (dispatch [:time-color 34562])
-;  (path [:time-color])            ;; this is middleware
-;  (fn
-;    [time-color [_ value]]        ;; path middleware adjusts the first parameter
-;    value))
-
+  (path [:views 0 :tool])  ;; this is middleware
+  (fn [mode [_ value]]   ;; path middleware adjusts the first parameter
+    value))
 
 ;; -- Subscription Handlers ---------------------------------------------------
 
@@ -616,30 +546,15 @@
 (reg-sub
   :change-mode
   (fn [db _]
-    (try
-      (-> (:editor (current-view db)) .-context .-tool)
-      (catch js/Object e ""))))
+    ((current-view db) :tool)))
+
+(reg-sub
+  :canvas-event
+  (fn [db _]
+    (:views db)))
+
 
 ;; -- View Components ---------------------------------------------------------
-
-;(defn clock
-;  []
-;  (let [time-color (subscribe [:time-color])
-;        timer (subscribe [:timer])]
-;       #(let [time-str (-> @timer .toTimeString (clojure.string/split " ") first)
-;              style {:style {:color @time-color}}]
-;             [:div.example-clock style time-str])))
-
-;(defn color-input
-;  []
-;  (let [time-color (subscribe [:time-color])]
-;    (fn []
-;        [:div.color-input
-;          "Time color: "
-;          [:input {:type "text"
-;                   :value @time-color
-;                   :on-change #(dispatch
-;                                [:time-color (-> % .-target .-value)])}]])))
 
 (defn button [icon tooltip selected event]
   [:div {:title tooltip}
@@ -666,28 +581,37 @@
         [button (ic/communication-call-made) "move +1" false [:inc]]
         [button (ic/communication-call-received) "move -1" false [:dec]]]])))
 
+(defn dicom-editor [editor-id]
+  (let [views (subscribe [:canvas-event])]
+    (fn []
+        [:dicom-roi-editor {:id editor-id
+                            :prefs (js/JSON.stringify (clj->js (:prefs (first @views))))
+                            :series (js/JSON.stringify (clj->js (:series (first @views))))
+                            :activeplane (str (:active-plane (first @views)))
+                            :windowingcenter  (str (:windowing-center (first @views)))
+                            :windowingwidth  (str (:windowing-width (first @views)))
+                            :axial (js/JSON.stringify (clj->js (:axial (first @views))))
+                            :sagittal (js/JSON.stringify (clj->js (:sagittal (first @views))))
+                            :frontal (js/JSON.stringify (clj->js (:frontal (first @views))))}])))
+
 (defn simple-example []
-  (let [canvas-id (str "canvas" (rand-int 1000000))]
+  (let [editor-id (str "editor" (rand-int 1000000))]
 
     [mui-theme-provider {:mui-theme (get-mui-theme
                                         {:palette {:text-color (color :blue800)}})}
       [:div
        [ui/app-bar {:title                 "ePAD"
                     :icon-class-name-right "muidocs-icon-navigation-expand-more"}]
-       [toolbar canvas-id]
+       [toolbar editor-id]
        [ui/paper
         [:div {:class "editor-holder"}
-         [:dicom-roi-editor {:id canvas-id}]]]]]))
+         [dicom-editor editor-id]]]]]))
 
 
 ;; -- Entry Point -------------------------------------------------------------
 
 (defn ^:export run
   []
-  ;(.log js/console (formula 3 + (4)))
-  ;(js/alert ($ 3  + (9 / 8) + (Math/sin 4 1)))
-  ;(js/alert (str " $11:" ($ 4 / 4 * 2)))
-  ;(js/alert (str " $:" ($ Math/sin(4) / 4 * x10(Math/sin(2)+ 50))))
   (dispatch-sync [:initialize])
   (r/render [simple-example]
             (js/document.getElementById "app")))

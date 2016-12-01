@@ -58,7 +58,7 @@ module br.usp.dilvanLab.roi3DEditor {
             //let str = code;
             gl.shaderSource(shader, code);
             gl.compileShader(shader);
-            if (!gl.getShaderParameter(shader, WebGLRenderingContext.COMPILE_STATUS)) {
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
                 alert("Shader Compilation failed!");
                 let msg = gl.getShaderInfoLog(shader);
                 if (!msg) msg = "null";
@@ -69,7 +69,7 @@ module br.usp.dilvanLab.roi3DEditor {
         }
 
         private static createVertexShader(gl:WebGLRenderingContext, code:string) {
-            return this.createShader(gl, gl.createShader(WebGLRenderingContext.VERTEX_SHADER), code);
+            return this.createShader(gl, gl.createShader(gl.VERTEX_SHADER), code);
         }
 
         private _windowingCenter:number = DEFAULT_WINDOWING_CENTER; // 0.5; //64000.0/2;
@@ -422,9 +422,9 @@ module br.usp.dilvanLab.roi3DEditor {
 
         //@Override
         markChanged() {
-            this.setActiveImage(AXIAL, 0.5);
-            this.setActiveImage(SAGITTAL, 0.5);
-            this.setActiveImage(FRONTAL, 0.5);
+            this.setImageCoord(AXIAL, 0.5);
+            this.setImageCoord(SAGITTAL, 0.5);
+            this.setImageCoord(FRONTAL, 0.5);
             this.axial.changed = true;
             this.sagittal.changed = true;
             this.frontal.changed = true;
@@ -681,7 +681,7 @@ module br.usp.dilvanLab.roi3DEditor {
         }
 
         //@Override
-        setActiveImage(plane:number, coord:number) {
+        setImageCoord(plane:number, coord:number) {
             //if (Math.round(planes[plane].imgCoord) === coord)
             //	return;
             if (this.planes[plane].imgCoord === coord)
