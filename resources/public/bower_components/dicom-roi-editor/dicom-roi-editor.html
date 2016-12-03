@@ -70,26 +70,26 @@ Example:
 <script type="text/javascript" src="js/app.js"></script>
 
 <script>
+  const AXIAL= br.usp.dilvanLab.roi3DEditor.AXIAL;
+  const FRONTAL= br.usp.dilvanLab.roi3DEditor.FRONTAL;
+  const SAGITTAL= br.usp.dilvanLab.roi3DEditor.SAGITTAL;
+  const ALL= br.usp.dilvanLab.roi3DEditor.ALL;
 
   Polymer({
       is: "dicom-roi-editor",
       properties: {
-          canvas: {type: Object, value: {}},
-          prefs: {type: String, value:null},
-          series: {type: String, value: null},
+          baseurl: {type: String, value: null},
+          pngs: {type: Object, value: null},
+          prefs: {type: Object, value:null},
+          series: {type: Object, value: null},
 
-          AXIAL: {type: Number, value: br.usp.dilvanLab.roi3DEditor.AXIAL, readonly:true},
-          FRONTAL: {type: Number, value: br.usp.dilvanLab.roi3DEditor.FRONTAL, readonly:true},
-          SAGITTAL: {type: Number, value: br.usp.dilvanLab.roi3DEditor.SAGITTAL, readonly:true},
-          ALL: {type: Number, value: br.usp.dilvanLab.roi3DEditor.ALL, readonly:true},
+          windowingcenter: {type: Number, observer: '_updateRendering'},
+          windowingwidth: {type: Number, observer: '_updateRendering'},
+          activeplane: {type: Number, observer: '_updateRendering'},
 
-          windowingcenter: {type: String, observer: '_updateRendering'},
-          windowingwidth: {type: String, observer: '_updateRendering'},
-          activeplane: {type: String, observer: '_updateRendering'},
-
-          axial: {type: String, observer: '_updateRendering'},
-          frontal: {type: String, observer: '_updateRendering'},
-          sagittal: {type: String, observer: '_updateRendering'},
+          axial: {type: Object, observer: '_updateRendering'},
+          frontal: {type: Object, observer: '_updateRendering'},
+          sagittal: {type: Object, observer: '_updateRendering'},
       },
       behaviors: [],
 
@@ -100,13 +100,23 @@ Example:
 
           this.makeCanvas();
 
-          this._editor = new br.usp.dilvanLab.roi3DEditor.WebGLViewerImpl(this._canvas, 0, JSON.parse(this.prefs), JSON.parse(this.series));
+          this._editor = new br.usp.dilvanLab.roi3DEditor.WebGLViewerImpl(this._canvas, 0, this.prefs, this.series);
           this._canvas.editor = this._editor;
 
           this.canvas = this._canvas;
-          this.editor = this._editor;
+          //this.editor = this._editor;
+
+          //let baseURL= "1.2.826.0.1.3680043.8.420.29267207592271555902603369361594637742/series/1.2.826.0.1.3680043.8.420.13029244630897359628709378005929429184/images/";
+
+          let that= this;
+          this.pngs.forEach(
+              function(png, index, array){
+                  that._editor.loadPngTexture(index, that.baseurl+png);
+              }
+          );
 
           this._updateRendering();
+          resizeCanvas();
       },
       // Element Behavior
 
@@ -124,29 +134,17 @@ Example:
           this._editor.setImageCoord(i, obj.imgCoord);
       },
 
-      upd: function(){
-          alert("upd");
-          this._updateRendering();
-      },
-
       _updateRendering: function() {
           if (!this._editor) return;
-          this._editor.activePlane = parseInt(this.activeplane);
-          this._editor.windowingCenter = parseInt(this.windowingcenter);
-          this._editor.windowingWidth = parseInt(this.windowingwidth);
+          this._editor.activePlane = this.activeplane;
+          this._editor.windowingCenter = this.windowingcenter;
+          this._editor.windowingWidth = this.windowingwidth;
 
-          //console.log(parseInt(this.getAttribute('windowingCenter')))
-          //console.log("--------")
-          let axial = JSON.parse(this.axial);
-          this.setPlane(br.usp.dilvanLab.roi3DEditor.AXIAL, axial);
-          let sagittal = JSON.parse(this.sagittal);
-          this.setPlane(br.usp.dilvanLab.roi3DEditor.SAGITTAL, sagittal);
-          let frontal = JSON.parse(this.frontal);
-          this.setPlane(br.usp.dilvanLab.roi3DEditor.FRONTAL, frontal);
+          //alert(JSON.stringify(this.axial));
+          this.setPlane(br.usp.dilvanLab.roi3DEditor.AXIAL, this.axial);
+          this.setPlane(br.usp.dilvanLab.roi3DEditor.SAGITTAL, this.sagittal);
+          this.setPlane(br.usp.dilvanLab.roi3DEditor.FRONTAL, this.frontal);
 
-          //alert(this._editor.windowingCenter);
-          //alert(this.getAttribute('windowingCenter'));
-          //alert(JSON.stringify(frontal));
           this._editor.drawImage();
       },
 
