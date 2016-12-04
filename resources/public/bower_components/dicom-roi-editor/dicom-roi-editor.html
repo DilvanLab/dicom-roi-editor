@@ -55,14 +55,14 @@ Example:
             }
         });
    </script>
-
 @demo
 -->
 <dom-module id="dicom-roi-editor">
 
-  <style> </style>
   <template>
+
     <content></content>
+
   </template>
 
 </dom-module>
@@ -70,13 +70,14 @@ Example:
 <script type="text/javascript" src="js/app.js"></script>
 
 <script>
-  const AXIAL= br.usp.dilvanLab.roi3DEditor.AXIAL;
-  const FRONTAL= br.usp.dilvanLab.roi3DEditor.FRONTAL;
-  const SAGITTAL= br.usp.dilvanLab.roi3DEditor.SAGITTAL;
-  const ALL= br.usp.dilvanLab.roi3DEditor.ALL;
+//  const AXIAL= br.usp.dilvanLab.roi3DEditor.AXIAL;
+//  const FRONTAL= br.usp.dilvanLab.roi3DEditor.FRONTAL;
+//  const SAGITTAL= br.usp.dilvanLab.roi3DEditor.SAGITTAL;
+//  const ALL= br.usp.dilvanLab.roi3DEditor.ALL;
 
   Polymer({
       is: "dicom-roi-editor",
+      extends: "canvas",
       properties: {
           baseurl: {type: String, value: null},
           pngs: {type: Object, value: null},
@@ -98,12 +99,13 @@ Example:
           // into a document.
           //this._canvas = null;
 
-          this.makeCanvas();
+          //this.makeCanvas();
 
-          this._editor = new br.usp.dilvanLab.roi3DEditor.WebGLViewerImpl(this._canvas, 0, this.prefs, this.series);
-          this._canvas.editor = this._editor;
+          this._editor = new br.usp.dilvanLab.roi3DEditor.WebGLViewerImpl(this, 0, this.prefs, this.series);
+          this.editor = this._editor;
 
-          this.canvas = this._canvas;
+          //this._canvas = this;
+          //this.canvas = this._canvas;
           //this.editor = this._editor;
 
           //let baseURL= "1.2.826.0.1.3680043.8.420.29267207592271555902603369361594637742/series/1.2.826.0.1.3680043.8.420.13029244630897359628709378005929429184/images/";
@@ -148,17 +150,17 @@ Example:
           this._editor.drawImage();
       },
 
-      makeCanvas: function(){
-          //let shadowRoot = this.attachShadow({mode: 'open'});
-
-          this._canvas = document.createElement('canvas');
-          this.appendChild(this._canvas)
-      },
+//      makeCanvas: function(){
+//          //let shadowRoot = this.attachShadow({mode: 'open'});
+//
+//          this._canvas = document.createElement('canvas');
+//          this.appendChild(this._canvas)
+//      },
 
       resize: function(size){
-          if (!this._canvas) return;
-          this._canvas.width= size;
-          this._canvas.height= size;
+          //if (!this._canvas) return;
+          this.width= size;
+          this.height= size;
           this._updateRendering();
       }
 
