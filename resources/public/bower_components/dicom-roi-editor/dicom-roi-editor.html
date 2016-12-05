@@ -86,7 +86,7 @@ Example:
 
           windowingcenter: {type: Number, observer: '_updateRendering'},
           windowingwidth: {type: Number, observer: '_updateRendering'},
-          activeplane: {type: Number, observer: '_updateRendering'},
+          activeplane: {type: String, observer: '_updateRendering'},
 
           axial: {type: Object, observer: '_updateRendering'},
           frontal: {type: Object, observer: '_updateRendering'},
@@ -136,9 +136,19 @@ Example:
           this._editor.setImageCoord(i, obj.imgCoord);
       },
 
+      convertActivePlane: function(name){
+          switch (name.toLowerCase()) {
+              case "axial": return br.usp.dilvanLab.roi3DEditor.AXIAL;
+              case "sagittal": return br.usp.dilvanLab.roi3DEditor.SAGITTAL;
+              case "frontal": return br.usp.dilvanLab.roi3DEditor.FRONTAL;
+              case "all": return br.usp.dilvanLab.roi3DEditor.ALL;
+              default: return null;
+          }
+      },
+
       _updateRendering: function() {
           if (!this._editor) return;
-          this._editor.activePlane = this.activeplane;
+          this._editor.activePlane = this.convertActivePlane(this.activeplane);
           this._editor.windowingCenter = this.windowingcenter;
           this._editor.windowingWidth = this.windowingwidth;
 

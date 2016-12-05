@@ -8,6 +8,7 @@
 .idea
 
 js/
+*.js
 .DS_Dtore
 .idea
 target/
