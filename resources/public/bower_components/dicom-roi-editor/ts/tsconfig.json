@@ -11,7 +11,7 @@
     "rootDir": ".",
     "sourceMap": true
   },
-  "files": ["Webgl.ts"]
+  "files": ["WebGLViewerImpl.ts"]
 }
 
 
