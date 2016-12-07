@@ -1,14 +1,14 @@
 # dicom-roi-editor
 
-A Polymer component to visualize Dicom images and edit 2D and 3D ROI (Regions of Interest). It allows the edition of 2D (points, lines, polygons, etc) and 3D (masks) ROIs in the axial, frontal and sagittal views. 
+Adaptation of a Polymer component, using [ClojureScript](https://clojurescript.org/) + [Re-frame](https://github.com/Day8/re-frame), to visualize Dicom images and edit 2D and 3D ROI (Regions of Interest). It will eventually allow the edition of 2D (points, lines, polygons, etc) and 3D (masks) ROIs in the axial, frontal and sagittal views. 
 
 To test component:
 
-1. Clone project (or download and unzip project) using button above.
-2. Go to project folder and run the [`polyserve`](https://github.com/PolymerLabs/polyserve) command ([node.js + npm](https://coolestguidesontheplanet.com/installing-node-js-on-osx-10-10-yosemite/) needed to install `polyserve`). 
-`polyserve` isn't needed to run the demo, but, if you use another webserver, go to the `bower_components` folder, create the link `ln -s .. dicom-roi-editor`, run the webserver (for instance, `python -m SimpleHTTPServer 8080`) in this folder and, on a browser, go to [`http://localhost:8080/dicom-roi-editor/demo/`](http://localhost:8080/dicom-roi-editor/demo/).
-3. On a browser, go to [`http://localhost:8080/components/dicom-roi-editor/demo/`](http://localhost:8080/components/dicom-roi-editor/demo/).
-4. Press the `Load Images` button.
+1. You need [leiningen](http://leiningen.org) and java installed.
+2. Clone project (or download and unzip project) using button above.
+3. Go to project folder and run `lein do clean, figwheel`
+4. On a browser, go to [`http://0.0.0.0:3449/`](http://0.0.0.0:3449/).
+5. Click on the "cloud icon" to download images.
 
 The demo has buttons to:
 

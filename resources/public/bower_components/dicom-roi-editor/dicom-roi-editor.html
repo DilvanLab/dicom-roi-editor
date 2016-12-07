@@ -1,0 +1,132 @@
+<!--
+    Copyright (c) Dilvan A. Moreira 2015. All rights reserved.
+    This file is part of ePad.
+
+     ePad is free software: you can redistribute it and/or modify
+     it under the terms of the GNU General Public License as published by
+     the Free Software Foundation, either version 3 of the License.
+
+     ePad is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+     GNU General Public License for more details.
+
+     You should have received a copy of the GNU General Public License
+     along with ePad.  If not, see <http://www.gnu.org/licenses/>.
+-->
+<link rel="import" href="../polymer/polymer.html">
+
+<!--
+A Polymer component to visualize Dicom images and edit 2D and 3D ROI (Regions of Interest).
+It allows the edition of 2D (points, lines, polygons, etc) and 3D (masks) ROIs in the axial, frontal and sagittal views.
+-->
+<dom-module id="dicom-roi-editor">
+
+  <template>
+
+    <content></content>
+
+  </template>
+
+</dom-module>
+
+<script type="text/javascript" src="js/app.js"></script>
+
+<script>
+//  const AXIAL= br.usp.dilvanLab.roi3DEditor.AXIAL;
+//  const FRONTAL= br.usp.dilvanLab.roi3DEditor.FRONTAL;
+//  const SAGITTAL= br.usp.dilvanLab.roi3DEditor.SAGITTAL;
+//  const ALL= br.usp.dilvanLab.roi3DEditor.ALL;
+
+  Polymer({
+      is: "dicom-roi-editor",
+      extends: "canvas",
+      properties: {
+          baseurl: {type: String, value: null},
+          pngs: {type: Object, value: null},
+          prefs: {type: Object, value:null},
+          series: {type: Object, value: null},
+
+          windowingcenter: {type: Number, observer: '_updateRendering'},
+          windowingwidth: {type: Number, observer: '_updateRendering'},
+          activeplane: {type: String, observer: '_updateRendering'},
+
+          axial: {type: Object, observer: '_updateRendering'},
+          frontal: {type: Object, observer: '_updateRendering'},
+          sagittal: {type: Object, observer: '_updateRendering'},
+      },
+      behaviors: [],
+
+      attached: function () {
+          // `attached` fires once the element and its parents have been inserted
+          // into a document.
+
+          this._editor = new br.usp.dilvanLab.roi3DEditor.WebGLViewerImpl(this, 0, this.prefs, this.series);
+          this.editor = this._editor;
+
+          let that= this;
+          this.pngs.forEach(
+              function(png, index, array){
+                  that._editor.loadPngTexture(index, that.baseurl+png);
+              }
+          );
+
+          this._updateRendering();
+          resizeCanvas();
+      },
+      // Element Behavior
+
+      /**
+       * The `seed-element-lasers` event is fired whenever `fireLasers` is called.
+       *
+       * @event test not real
+       * @detail {{sound: String}}
+       */
+
+      setPlane: function(i, obj){
+          this._editor.setX(i, obj.x);
+          this._editor.setY(i, obj.y);
+          this._editor.setZoom(i, obj.zoom);
+          this._editor.setImageCoord(i, obj.imgCoord);
+      },
+
+      convertActivePlane: function(name){
+          switch (name.toLowerCase()) {
+              case "axial": return br.usp.dilvanLab.roi3DEditor.AXIAL;
+              case "sagittal": return br.usp.dilvanLab.roi3DEditor.SAGITTAL;
+              case "frontal": return br.usp.dilvanLab.roi3DEditor.FRONTAL;
+              case "all": return br.usp.dilvanLab.roi3DEditor.ALL;
+              default: return null;
+          }
+      },
+
+      _updateRendering: function() {
+          if (!this._editor) return;
+          this._editor.activePlane = this.convertActivePlane(this.activeplane);
+          this._editor.windowingCenter = this.windowingcenter;
+          this._editor.windowingWidth = this.windowingwidth;
+
+          //alert(JSON.stringify(this.axial));
+          this.setPlane(br.usp.dilvanLab.roi3DEditor.AXIAL, this.axial);
+          this.setPlane(br.usp.dilvanLab.roi3DEditor.SAGITTAL, this.sagittal);
+          this.setPlane(br.usp.dilvanLab.roi3DEditor.FRONTAL, this.frontal);
+
+          this._editor.drawImage();
+      },
+
+      resize: function(size){
+          //if (!this._canvas) return;
+          this.width= size;
+          this.height= size;
+          this._updateRendering();
+      }
+
+
+
+  //      setCursorRadius: function(radius) {editor.cursorRadius = radius},
+//      showSphere: function() {editor.showSphere()},
+//      setCursorCenter: function(plane, x, y) {editor.setCursorCenter(plane, x, y)},
+//      stampSphere: function() {editor.stampSphere()}
+  });
+
+</script>

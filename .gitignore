@@ -1,3 +1,16 @@
+#Ignore Eclipse directories
+.settings
+.project
+.classpath
+
+#Ignore Intellij files
+*.iml
+.idea
+
+js/
+*.js
 .DS_Dtore
 .idea
-bower_components
+target/
+.vscode
+pom.xml
