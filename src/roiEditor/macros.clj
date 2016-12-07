@@ -51,6 +51,9 @@
   `(not= ~x ~y))
 
 (defmacro when-let*
+  "bindings => binding-forms test
+
+  When test is true, evaluates body with binding-forms bound to the value of test"
   ([bindings & body]
    (if (seq bindings)
      `(when-let [~(first bindings) ~(second bindings)]

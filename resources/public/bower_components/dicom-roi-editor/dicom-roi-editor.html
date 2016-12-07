@@ -19,43 +19,6 @@
 <!--
 A Polymer component to visualize Dicom images and edit 2D and 3D ROI (Regions of Interest).
 It allows the edition of 2D (points, lines, polygons, etc) and 3D (masks) ROIs in the axial, frontal and sagittal views.
-
-Example:
-
-       <dicom-roi-editor
-        canvas = '#epad-canvas'
-        pref = '{
-          overrideCenter: 0,
-          overrideWidth: 0,
-          windowOverride: false
-          }'
-        series = '{
-          bitsStored: "12",
-          columns: 512,
-          numberOfImages: 100,
-          pixelRepresentation: "0",
-          pixelSpacing: "0.974609375\\0.974609375",
-          rescaleIntercept: "-1000",
-          rescaleSlope: "1",
-          rows: 512,
-          sliceThickness: "5.0",
-          windowCenter: "00040\\00040",
-          windowWidth: "00400\\00400"
-          }'
-        >
-    </dicom-roi-editor>
-
-    <script>
-           document.querySelector('#load-button').addEventListener('click', function() {
-              var editor = document.querySelector('dicom-roi-editor').editor;
-              // Read png files
-              for (var i = 0; i < 7; i ++) {
-                  var url = "1_2_752_24_7_19011385_453825/1_2_840_113704_1_111_424_1207241028_7/filename" + i +".png";
-                  editor.loadPngTexture(i, url);
-            }
-        });
-   </script>
-@demo
 -->
 <dom-module id="dicom-roi-editor">
 
@@ -97,18 +60,9 @@ Example:
       attached: function () {
           // `attached` fires once the element and its parents have been inserted
           // into a document.
-          //this._canvas = null;
-
-          //this.makeCanvas();
 
           this._editor = new br.usp.dilvanLab.roi3DEditor.WebGLViewerImpl(this, 0, this.prefs, this.series);
           this.editor = this._editor;
-
-          //this._canvas = this;
-          //this.canvas = this._canvas;
-          //this.editor = this._editor;
-
-          //let baseURL= "1.2.826.0.1.3680043.8.420.29267207592271555902603369361594637742/series/1.2.826.0.1.3680043.8.420.13029244630897359628709378005929429184/images/";
 
           let that= this;
           this.pngs.forEach(
@@ -159,13 +113,6 @@ Example:
 
           this._editor.drawImage();
       },
-
-//      makeCanvas: function(){
-//          //let shadowRoot = this.attachShadow({mode: 'open'});
-//
-//          this._canvas = document.createElement('canvas');
-//          this.appendChild(this._canvas)
-//      },
 
       resize: function(size){
           //if (!this._canvas) return;
