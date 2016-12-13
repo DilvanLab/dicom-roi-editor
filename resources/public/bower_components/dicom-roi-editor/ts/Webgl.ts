@@ -419,7 +419,7 @@ module br.usp.dilvanLab.roi3DEditor {
             //
             //} else {
             const i = Math.max(Math.min(this.viewer.getImageCoord(plane2Act) + (event.deltaY > 0 ? 1.0 / this.viewer.imageNumber : -1.0 / this.viewer.imageNumber), 1), 0);
-            this.viewer.setActiveImage(plane2Act, i);
+            this.viewer.setImageCoord(plane2Act, i);
             this.viewer.drawImage();
             //}
         }
@@ -452,12 +452,12 @@ module br.usp.dilvanLab.roi3DEditor {
                 case this.RIGHT_ARROW: // TODO update i to double
                     let i = Math.max(Math.min(this.viewer.getImageCoord(AXIAL) + (1.0 / this.viewer.imageNumber), 1), 0);
                     //if (i > this.viewer.imageNumber * this.viewer.sliceSpacing) return;
-                    this.viewer.setActiveImage(AXIAL, i);
+                    this.viewer.setImageCoord(AXIAL, i);
                     break;
                 case this.LEFT_ARROW:
                     i = Math.max(Math.min(this.viewer.getImageCoord(AXIAL) - (1.0 / this.viewer.imageNumber), 1), 0);
                     //if (i < 0) return;
-                    this.viewer.setActiveImage(AXIAL, i);
+                    this.viewer.setImageCoord(AXIAL, i);
                     break;
             }
             this.viewer.drawImage();

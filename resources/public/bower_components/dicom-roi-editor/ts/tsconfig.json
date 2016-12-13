@@ -3,15 +3,16 @@
 
     "target": "ES5",
 
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "removeComments": true,
     "preserveConstEnums": true,
+    "alwaysStrict": true,
 
     "out": "../js/app.js",
     "rootDir": ".",
     "sourceMap": true
   },
-  "files": ["WebGLViewerImpl.ts"]
+  "files": ["WebGLEditorImpl.ts"]
 }
 
 

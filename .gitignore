@@ -14,3 +14,5 @@ js/
 target/
 .vscode
 pom.xml
+.lein-repl-history
+figwheel_server.log

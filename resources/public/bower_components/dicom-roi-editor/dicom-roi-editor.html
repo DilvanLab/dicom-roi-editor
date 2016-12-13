@@ -54,14 +54,15 @@ It allows the edition of 2D (points, lines, polygons, etc) and 3D (masks) ROIs i
           axial: {type: Object, observer: '_updateRendering'},
           frontal: {type: Object, observer: '_updateRendering'},
           sagittal: {type: Object, observer: '_updateRendering'},
+
+          sphere: {type: Object, observer: '_updateRendering'}
       },
       behaviors: [],
 
       attached: function () {
           // `attached` fires once the element and its parents have been inserted
           // into a document.
-
-          this._editor = new br.usp.dilvanLab.roi3DEditor.WebGLViewerImpl(this, 0, this.prefs, this.series);
+          this._editor = new br.usp.dilvanLab.roi3DEditor.WebGLEditorImpl(this, 0, this.prefs, this.series);
           this.editor = this._editor;
 
           let that= this;
@@ -110,6 +111,13 @@ It allows the edition of 2D (points, lines, polygons, etc) and 3D (masks) ROIs i
           this.setPlane(br.usp.dilvanLab.roi3DEditor.AXIAL, this.axial);
           this.setPlane(br.usp.dilvanLab.roi3DEditor.SAGITTAL, this.sagittal);
           this.setPlane(br.usp.dilvanLab.roi3DEditor.FRONTAL, this.frontal);
+
+          this._editor.setCursorCenter(this.convertActivePlane(this.sphere.plane), this.sphere.x, this.sphere.y);
+          this._editor.cursorRadius = this.sphere.radius;
+          if (!this.sphere.show)
+              this._editor.cursorRadius = 0;
+          this._editor.showSphere();
+          //this._editor.stampSphere();
 
           this._editor.drawImage();
       },

@@ -40,7 +40,7 @@ module br.usp.dilvanLab.roi3DEditor {
 
         private cmdBuffer = new Array<Point>(); 
 
-        constructor(canvas:HTMLCanvasElement, mode:number, pref:Preferences, series:DicomSeriesInfo) {
+        public constructor(canvas:HTMLCanvasElement, mode:number, pref:Preferences, series:DicomSeriesInfo) {
             super(canvas, mode, pref, series);
             this.stampShader = WebGLViewerImpl.createProgram(this.gl, shaders.simpleVs, shaders.stampFs);
 
@@ -103,8 +103,8 @@ module br.usp.dilvanLab.roi3DEditor {
         //@Override
         showSphere() {
 
-            if (!this.isInRange(this.cursor.x) || !this.isInRange(this.cursor.y) || !this.isInRange(this.cursor.radius))
-                return;
+            // if (!this.isInRange(this.cursor.x) || !this.isInRange(this.cursor.y) || !this.isInRange(this.cursor.radius))
+            //     return;
 
             const gl = this.gl;
             gl.useProgram(this.moveShader);
@@ -195,17 +195,22 @@ module br.usp.dilvanLab.roi3DEditor {
         set cursorRadius(radius:number) {this.cursor.radius = radius}
 
         //@Override
-        protected showPlane(plane:Plane, scale:number, trans:number[], ...fcts) {
+        protected showPlane(plane:Plane, scale:number, trans:number[], ...fcts:Array<()=>void>) {
 
             const gl = this.gl;
             // Copy Runnables already there, if any
-            let fcts2 = new Array(fcts.length + 1);
-            for (let i = 0; i < fcts.length; i++)
+            let fcts2 = new Array(fcts.length + 4);
+            fcts2[0] = plane;
+            fcts2[1] = scale;
+            fcts2[2] = trans;
+            for (let i = 3; i < fcts.length-1; i++)
                 fcts2[i] = fcts[i];
 
+            //let that = this;
             // Add the Runnable to show the sphere
-            fcts2[fcts.length] = ():void => {
+            fcts2[fcts.length+3] = ()=>{
                 //TODO: plane not being updated to the current one when there is only one
+                //if (!this.cursor) return;
                 if ((this._activePlane || this.cursor.plane === plane) && this.cursor.visible) {
                     GL.setF(gl, this.simpleShader, "sphereX", this.cursor.x);
                     GL.setF(gl, this.simpleShader, "sphereY", this.cursor.y);
@@ -216,7 +221,7 @@ module br.usp.dilvanLab.roi3DEditor {
                     GL.setF(gl, this.simpleShader, "sphereRadius", 0);
                 }
             };
-            super.showPlane(plane, scale, trans, fcts2);
+            super.showPlane.apply(this, fcts2);
         }
 
         //@Override
@@ -295,6 +300,8 @@ module br.usp.dilvanLab.roi3DEditor {
 
                 gl.drawArrays(gl.TRIANGLES, 0, 6);
 
+                console.log("Triangle ...");
+
                 gl.bindTexture(gl.TEXTURE_2D, text.texture);
                 gl.generateMipmap(gl.TEXTURE_2D);
 
@@ -326,7 +333,7 @@ module br.usp.dilvanLab.roi3DEditor {
         xyzCoord(cursor:Sphere) {
             const x1 = cursor.x; const y1= cursor.y; const plane= cursor.plane;
             const dz = this.sliceSpacing / (this.imgWidth * this.pixelSpacing);
-            let x, y, z;
+            let x:number, y:number, z:number;
             if (plane === this.axial) {
                 x = x1;
                 y = y1;

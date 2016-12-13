@@ -109,7 +109,7 @@ module br.usp.dilvanLab.roi3DEditor {
 
         protected mode:number = LOAD_IMAGES;
 
-        constructor(canvas:HTMLCanvasElement, mode:number, pref:Preferences=null, series:DicomSeriesInfo=null) {
+        constructor(canvas:HTMLCanvasElement, mode:number, pref:Preferences, series:DicomSeriesInfo) {
             this.gl = GL.create(canvas);
 
             if (!this.gl) return;
@@ -481,7 +481,7 @@ module br.usp.dilvanLab.roi3DEditor {
             //this.gl.deleteBuffer(renderbuffer);
         }
 
-        private loadTexture(text:WebGLTexture, textureImage) {
+        private loadTexture(text:WebGLTexture, textureImage:ImageData | HTMLVideoElement | HTMLImageElement | HTMLCanvasElement) {
 
 
             const gl = this.gl;
@@ -773,12 +773,13 @@ module br.usp.dilvanLab.roi3DEditor {
             this.planes[plane].zoom = zoom;
         }
 
-        protected showPlane(plane:Plane, scale:number, trans:number[], ...extraFcts) {
+        protected showPlane(plane:Plane, scale:number, trans:number[], ...extraFcts:Array<()=>void>) {
 
             const gl = this.gl;
             gl.useProgram(this.simpleShader);
 
             extraFcts.forEach((fct)=> {
+                //console.log(fct);
                 fct()
             });
 

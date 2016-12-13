@@ -178,4 +178,5 @@
                       :windowing-width (js/parseInt (:windowWidth series))
                       :axial    {:x 0.5 :y 0.5 :zoom 1 :imgCoord 0.5}
                       :sagittal {:x 0.5 :y 0.5 :zoom 1 :imgCoord 0.5}
-                      :frontal  {:x 0.5 :y 0.5 :zoom 1 :imgCoord 0.5}}}})
+                      :frontal  {:x 0.5 :y 0.5 :zoom 1 :imgCoord 0.5}
+                      :sphere   {:x 50  :y 50 :plane :axial :radius 0.2 :show false}}}})

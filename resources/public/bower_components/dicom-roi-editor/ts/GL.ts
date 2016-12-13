@@ -35,7 +35,7 @@ module br.usp.dilvanLab.roi3DEditor {
             return context;
         }
 
-        private static handleInitError(container, msg:string) {
+        private static handleInitError(container:HTMLElement, msg:string) {
             let OTHER_PROBLEM =
                 "It doesn't appear your computer can support WebGL.<br/>" +
                 "<a href=\"http://get.webgl.org/troubleshooting/\">Click here for more information.</a>";
