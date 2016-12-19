@@ -1,3 +1,22 @@
+;
+; Copyright (c) Dilvan A. Moreira 2016. All rights reserved.
+;
+;  This file is part of ePAD2.
+;
+;  ePAD2 is free software: you can redistribute it and/or modify
+;  it under the terms of the GNU General Public License as published by
+;  the Free Software Foundation, either version 3 of the License, or
+;  (at your option) any later version.
+;
+;  ePAD2 is distributed in the hope that it will be useful,
+;  but WITHOUT ANY WARRANTY; without even the implied warranty of
+;  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;  GNU General Public License for more details.
+;
+;  You should have received a copy of the GNU General Public License
+;  along with ePAD2.  If not, see <http://www.gnu.org/licenses/>.
+;
+
 (ns roiEditor.core
   (:require-macros [roiEditor.macros :refer [$]])
   (:require [reagent.core :refer [render]]
@@ -67,7 +86,7 @@
     [ui/mui-theme-provider {:mui-theme (get-mui-theme
                                          {:palette {:text-color (color :blue800)}})}
      [:div
-      [ui/app-bar {:title                 "ePAD"
+      [ui/app-bar {:title                 "ePAD2"
                    :icon-class-name-right "muidocs-icon-navigation-expand-more"}]
       [toolbar editor-id]
       [ui/paper
@@ -80,6 +99,6 @@
 (defn ^:export run
   []
   (dispatch-sync [:initialize])
-  (enable-re-frisk!)
+  ;(enable-re-frisk!)
   (render [simple-example]
           (js/document.getElementById "app")))

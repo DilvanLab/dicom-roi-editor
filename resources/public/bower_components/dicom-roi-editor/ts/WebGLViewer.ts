@@ -1,19 +1,4 @@
-/*
- *    Copyright (c) Dilvan A. Moreira 2015. All rights reserved.
- *    This file is part of ePad.
- *
- *     ePad is free software: you can redistribute it and/or modify
- *     it under the terms of the GNU General Public License as published by
- *     the Free Software Foundation, either version 3 of the License.
- *
- *     ePad is distributed in the hope that it will be useful,
- *     but WITHOUT ANY WARRANTY; without even the implied warranty of
- *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU General Public License for more details.
- *
- *     You should have received a copy of the GNU General Public License
- *     along with ePad.  If not, see <http://www.gnu.org/licenses/>.
- */
+
 
 ///<reference path='./DicomSeriesInfo.ts' />
 ///<reference path='./GL.ts' />
@@ -155,7 +140,6 @@ module br.usp.dilvanLab.roi3DEditor {
      * Created by dilvan on 11/10/14.
      */
     export interface WebGLViewer {
-        //const AXIAL:number = 0;
 
         windowingWidth:number;
         windowingCenter:number;
@@ -170,25 +154,17 @@ module br.usp.dilvanLab.roi3DEditor {
         sliceSpacing:number;
 
         drawImage():void;
+
         getImageCoord(plane:number):number;
-        //getSquare(plane:number):number[];
         getX(plane:number):number;
         getY(plane:number):number;
         getZoom(plane:number):number;
-        markChanged():void;
-        handleLoadedJpgTexture(i:number, imageJpg:HTMLImageElement):void;
-        //handleLoadedJpgTexture(imgText:ImgTexture, imageJpg:HTMLImageElement):void;
-        //isImageLoaded(i:number):boolean;
-        //handleLoadedTexture(i:number, textureImage:HTMLImageElement):void;
 
         setImageCoord(plane:number, coord:number):void;
-        setPlanesCoord(plane:number, x:number, y:number):void;
         setX(plane:number, x:number):void;
         setY(plane:number, y:number):void;
         setZoom(plane:number, zoom:number):void;
-        //xCoord(x:number):number;
-        //TODO Change this to not use delete
-        //delete():void;
+
         pixels2Units(plane:number, pixels:number):number;//
     }
 }

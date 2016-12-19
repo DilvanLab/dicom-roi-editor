@@ -1,3 +1,22 @@
+;
+; Copyright (c) Dilvan A. Moreira 2016. All rights reserved.
+;
+;  This file is part of ePAD2.
+;
+;  ePAD2 is free software: you can redistribute it and/or modify
+;  it under the terms of the GNU General Public License as published by
+;  the Free Software Foundation, either version 3 of the License, or
+;  (at your option) any later version.
+;
+;  ePAD2 is distributed in the hope that it will be useful,
+;  but WITHOUT ANY WARRANTY; without even the implied warranty of
+;  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;  GNU General Public License for more details.
+;
+;  You should have received a copy of the GNU General Public License
+;  along with ePAD2.  If not, see <http://www.gnu.org/licenses/>.
+;
+
 (ns roiEditor.base
   (:require-macros [roiEditor.macros :refer [$]])
   (:require [re-frame.core :refer [reg-event-db reg-sub path dispatch]]
@@ -5,6 +24,13 @@
 
 ;;   Browser events
 ;;
+;; onchange  An HTML element has been changed
+;; onclick  The user clicks an HTML element
+;; onmouseover  The user moves the mouse over an HTML element
+;; onmouseout  The user moves the mouse away from an HTML element
+;; onkeydown  The user pushes a keyboard key
+;; onload  The browser has finished loading the page
+
 (def MOUSE-DOWN "mousedown")
 (def MOUSE-UP "mouseup")
 (def MOUSE-MOVE "mousemove")
@@ -93,10 +119,10 @@
     (if (= (active-plane event) :all)
       (let [pos (get-mouse-pos event)]
         (cond
-          ($(pos :x) < c-width && (pos :y) < c-height) :axial
-          ($(pos :x) > c-width && (pos :y) > c-height) nil
-          ($(pos :x) > c-width) :frontal
-          ($(pos :y) > c-height) :sagittal
+          (and (< (pos :x) c-width) (< (pos :y) c-height)) :axial
+          (and (> (pos :x) c-width) (> (pos :y) c-height)) nil
+          (> (pos :x) c-width) :frontal
+          (> (pos :y) c-height) :sagittal
           :else nil))
       (active-plane event))))
 
@@ -144,19 +170,20 @@
 
 ;; -- Event Handlers ----------------------------------------------------------
 
-(reg-event-db                                               ;; setup initial state
+(reg-event-db                                               ;; setup initial state     
   :initialize                                               ;; usage:  (dispatch [:initialize])
   (fn [db _]
     (merge db initial-state)))                              ;; what it returns becomes the new state
 
-(defn $< [db & lst] (get-in db lst))
 
 (reg-event-db
   :canvas-event
   (fn [db [_ [event view-id]]]
-    (let [view1 ($< db :views view-id)
+    (let [view1 (get-in db [:views view-id])
           mode  (db :tool)]
       (if-let
+        ;; keyboard shortcuts checked first. Shift and metakey
+        ;; can change the chosen tool.
         [new (condp = (.-type event)
                MOUSE-DOWN
                ;(cond (not (or (.-shiftKey event) (.-metaKey event)))
@@ -166,11 +193,11 @@
                      (if (.-shiftKey event)
                        (canvas-event view1 :zoom event)
                        (canvas-event view1 mode event)))
-               WHEEL
+               WHEEL   ;;  Change the sphere radius in 3D mode when shift is down
                (if (not (.-metaKey event))
                    (canvas-event view1 :scroll event)
                    (canvas-event view1 mode event))
-               ; default
+               ;; default
                (canvas-event view1 mode event))]
         (assoc-all db [:views view-id] new
                    [:current] view-id)

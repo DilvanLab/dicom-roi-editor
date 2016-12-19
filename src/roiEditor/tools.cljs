@@ -1,5 +1,24 @@
+;
+; Copyright (c) Dilvan A. Moreira 2016. All rights reserved.
+;
+;  This file is part of ePAD2.
+;
+;  ePAD2 is free software: you can redistribute it and/or modify
+;  it under the terms of the GNU General Public License as published by
+;  the Free Software Foundation, either version 3 of the License, or
+;  (at your option) any later version.
+;
+;  ePAD2 is distributed in the hope that it will be useful,
+;  but WITHOUT ANY WARRANTY; without even the implied warranty of
+;  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;  GNU General Public License for more details.
+;
+;  You should have received a copy of the GNU General Public License
+;  along with ePAD2.  If not, see <http://www.gnu.org/licenses/>.
+;
+
 (ns roiEditor.tools
-  (:require-macros [roiEditor.macros :refer [$ → when-let*]])
+  (:require-macros [roiEditor.macros :refer [when-let*]])
   (:require [roiEditor.base :refer [which-plane active-plane editor
                                     movement-x movement-y update-all assoc-all clip canvas
                                     plane2number get-mouse canvas-event
@@ -91,16 +110,16 @@
   (let [canvas (canvas event)
         default-wc (js/parseInt(-> view :series :windowWidth))
         default-ww (js/parseInt(-> view :series :windowCenter))
-        deltaWW ($ (4 * (movement-x event) / (.-width  canvas) * default-ww))
-        deltaWC ($ (4 * (movement-y event) / (.-height canvas) * default-wc))]
+        deltaWW (* (/ (* 4 (movement-x event)) (.-width  canvas)) default-ww)
+        deltaWC (* (/ (* 4 (movement-y event)) (.-height canvas)) default-wc)]
     (update-all
       view
       [:windowing-center] #(if (<= (+ % deltaWC) 0) % (+ % deltaWC))
       [:windowing-width]  #(if (<= (+ % deltaWW) 0) % (+ % deltaWW)))))
-;;
-;;   ThreeD
-;;
 
+;;
+;;   3D
+;;
 (defmethod canvas-event [:3D MOUSE-DOWN] [view mode event]
   (when-let* [mouse (get-mouse event)
               plane (which-plane event)]
