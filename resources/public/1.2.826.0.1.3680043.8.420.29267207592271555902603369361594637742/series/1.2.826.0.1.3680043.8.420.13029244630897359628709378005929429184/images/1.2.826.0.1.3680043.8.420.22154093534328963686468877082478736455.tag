@@ -1,3 +1,22 @@
+<%--
+  ~ Copyright (c) Dilvan A. Moreira 2016. All rights reserved.
+  ~
+  ~  This file is part of ePAD2.
+  ~
+  ~  ePAD2 is free software: you can redistribute it and/or modify
+  ~  it under the terms of the GNU General Public License as published by
+  ~  the Free Software Foundation, either version 3 of the License, or
+  ~  (at your option) any later version.
+  ~
+  ~  Foobar is distributed in the hope that it will be useful,
+  ~  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  ~  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  ~  GNU General Public License for more details.
+  ~
+  ~  You should have received a copy of the GNU General Public License
+  ~  along with ePAD2.  If not, see <http://www.gnu.org/licenses/>.
+  --%>
+
 132:(0002,0000) UL #4 [196] Group Length
 144:(0002,0001) OB #2 [00\01] File Meta Information Version
 158:(0002,0002) UI #26 [1.2.840.10008.5.1.4.1.1.2] Media Storage SOP Class UID
