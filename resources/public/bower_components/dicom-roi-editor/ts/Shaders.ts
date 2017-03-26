@@ -236,7 +236,10 @@ varying vec2 v_texCoord;
 float square(float x) {return x*x;}
 
 bool isInsideCircle(vec2 pt) {
-    return (square(pt.x - sphereX) + square((pt.y - sphereY)*dy) <= square(sphereRadius));
+    //before:
+    //return (square(pt.x - sphereX) + square((pt.y - sphereY)*dy) <= square(sphereRadius));
+    //now:
+    return (square(pt.x - sphereX) + square((pt.y - sphereY)) <= square(sphereRadius));
 }
 
 void main(void) {
