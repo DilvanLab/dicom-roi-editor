@@ -1,3 +1,22 @@
+/*
+ * Copyright (c) Dilvan A. Moreira 2016. All rights reserved.
+ *
+ *  This file is part of ePAD2.
+ *
+ *  ePAD2 is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  ePAD2 is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with ePAD2. If not, see <http://www.gnu.org/licenses/>.
+ */
+
 /**
  * Created by dilvan on 4/17/16.
  */
@@ -215,7 +234,7 @@ module br.usp.dilvanLab.roi3DEditor {
         RIGHT_ARROW = 39;
         DOWN_ARROW = 40;
 
-        constructor(public context:br.usp.dilvanLab.roi3DEditor.Context) {
+        constructor(public context) { //:br.usp.dilvanLab.roi3DEditor.Context) {
             this.viewer = <WebGLViewerImpl> context.viewer;
         }
 

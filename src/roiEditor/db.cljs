@@ -171,7 +171,7 @@
    :overrideWidth  0,
    :windowOverride false})
 
-(def series {:bitsStored          "16",
+(def series {:bitsStored          "16", ;16
              :columns             512,
              :numberOfImages      145,
              :pixelRepresentation "1",
@@ -180,7 +180,7 @@
              :rescaleSlope        "1",
              :rows                512,
              :sliceThickness      "1.25",
-             :windowCenter        "00040\\00040",
+             :windowCenter        "00040\\00040", ;40
              :windowWidth         "00400\\00400"})
 
 (def initial-state

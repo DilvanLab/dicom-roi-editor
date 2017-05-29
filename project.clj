@@ -63,10 +63,10 @@
                                 :compiler     {:output-dir "resources/public/js"
                                                :output-to  "resources/public/js/client.js"}}}}
   :typescript {
-               :sources ["resources/public/bower_components/dicom-roi-editor/ts/*.ts"]
+               :sources ["resources/public/dicom-roi-editor/ts/*.ts"]
                :excludes [""]
                ;:watch true
-               :out "resources/public/bower_components/dicom-roi-editor/js/app.js"
+               :out "resources/public/dicom-roi-editor/js/app.js"
                ;:out-dir "target"
                ;:module :amd
                :declaration true
