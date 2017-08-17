@@ -190,7 +190,7 @@
   :open-series                                               ;; usage:  (dispatch [:initialize])
   (fn [db [_ [seriesInfoSTR]]]
     ;ve se a serie ja existe
-    (update-in db [:views] #(% js->clj (.parse js/JSON infoSTR)))))
+    (update-in db [:views] #(% js->clj (.parse js/JSON seriesInfoSTR)))))
 
 (reg-event-db
   :canvas-event

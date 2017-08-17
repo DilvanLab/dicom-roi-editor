@@ -43,14 +43,11 @@
 (defn patients-tab []
   (let [patients (subscribe [:read-patients])]
     (fn []
-      [ui/tree
+      [ui/toolbar
        [ui/toolbar-group ;{:first-child true}
         [ui/toolbar-title {:text "Tools"}]
-        [button (ic/action-search) "zoom" (@patients :studies) [:change-mode :zoom]]
-        [button (ic/maps-my-location) "scroll" (= @mode :scroll) [:change-mode :scroll]]
-        [button (ic/image-brightness-6) "windowing" (= @mode :gradient) [:change-mode :gradient]]
-        [button (ic/action-pan-tool) "move" (= @mode :move) [:change-mode :move]]
-        [button (ic/action-polymer) "3D Edit" (= @mode :3D) [:change-mode :3D]]]
+        [button (ic/action-search) "zoom" (@patients :studies) [:change-mode :zoom]]]
+
        [ui/toolbar-group ;{:last-child true}
         ;[ui/toolbar-separator]
         [button (ic/communication-call-made) "move +1" false [:inc]]

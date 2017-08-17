@@ -108,8 +108,8 @@
 ;;
 (defmethod canvas-event [:gradient MOUSE-MOVE] [view mode event]
   (let [canvas (canvas event)
-        default-wc (js/parseInt(-> view :series :windowWidth))
-        default-ww (js/parseInt(-> view :series :windowCenter))
+        default-wc (-> view :series :windowWidth) ;(js/parseInt(-> view :series :windowWidth))
+        default-ww (-> view :series :windowCenter) ;(js/parseInt(-> view :series :windowCenter))
         deltaWW (* (/ (* 4 (movement-x event)) (.-width  canvas)) default-ww)
         deltaWC (* (/ (* 4 (movement-y event)) (.-height canvas)) default-wc)]
     (update-all

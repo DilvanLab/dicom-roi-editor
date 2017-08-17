@@ -584,14 +584,14 @@ module br.usp.dilvanLab.roi3DEditor {
             //alert("ONLY: "+ series.pixelSpacing+"   sliSpac: "+ series.sliceThickness)
 
             // patch rs and ri if slope and intercept are undefined
-            let rescaleSlope = series['rescaleSlope'];
+            let rescaleSlope:number = series['rescaleSlope'];
             if (!rescaleSlope) {
-                rescaleSlope = "1.0";
+                rescaleSlope = 1;//"1.0";
                 console.info("Alert: Rescale Slope is empty ");
             }
-            let rescaleIntercept = series['rescaleIntercept'];
+            let rescaleIntercept:number = series['rescaleIntercept'];
             if (!rescaleIntercept) {
-                rescaleIntercept = "0.0";
+                rescaleIntercept = 0;
                 console.info("Alert: Rescale Intercept is empty ");
             }
 
@@ -599,28 +599,28 @@ module br.usp.dilvanLab.roi3DEditor {
             let defaultWC = series.windowCenter;
             // maybe override image window level and width
             if (pref.windowOverride) {
-                defaultWW = "" + pref.overrideWidth;
-                defaultWC = "" + pref.overrideCenter;
+                defaultWW = pref.overrideWidth; // + "";
+                defaultWC = pref.overrideCenter;// + "";
             }
 
             // Pixel Representation (0028,0103) is either unsigned (0) or signed
             // (1). The default is unsigned
-            const pixelRepresentation = GL.parseInt(series.pixelRepresentation); // 0
+            //const pixelRepresentation = GL.parseInt(series.pixelRepresentation); // 0
             // 16 or 12 bits
-            const bitsStored = GL.parseInt(series.bitsStored);
+            //const bitsStored = GL.parseInt(series.bitsStored);
 
-            const shifting = (pixelRepresentation > 0.5) ? 1 << (bitsStored - 1) : 0;
+            const shifting = (series.pixelRepresentation > 0.5) ? 1 << (series.bitsStored - 1) : 0;
 
-            this._defaultWW = GL.parseInt(defaultWW);
-            this._defaultWC = GL.parseInt(defaultWC);
-            this.rescaleSlope = GL.parseInt(rescaleSlope);
-            this.rescaleIntercept = GL.parseInt(rescaleIntercept);
+            this._defaultWW = defaultWW; //GL.parseInt(defaultWW);
+            this._defaultWC = defaultWC; //GL.parseInt(defaultWC);
+            this.rescaleSlope = rescaleSlope; //GL.parseInt(rescaleSlope);
+            this.rescaleIntercept = rescaleIntercept; //GL.parseInt(rescaleIntercept);
             this.shifting = shifting;
             this.imgWidth = series.columns;
             this.imgHeight = series.rows;
 
-            this.pixelSpacing = GL.parseFloat(series.pixelSpacing);
-            this._sliceSpacing = GL.parseFloat(series.sliceThickness);
+            this.pixelSpacing = series.pixelSpacing; //GL.parseFloat(series.pixelSpacing);
+            this._sliceSpacing = series.sliceThickness; // GL.parseFloat(series.sliceThickness);
 
             this.numImgs = series.numberOfImages;
             // now 4x4 = 16 per set of

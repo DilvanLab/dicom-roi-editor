@@ -171,17 +171,18 @@
    :overrideWidth  0,
    :windowOverride false})
 
-(def series {:bitsStored          "16", ;16
+(def series {:bitsStored          16,
              :columns             512,
              :numberOfImages      145,
-             :pixelRepresentation "1",
-             :pixelSpacing        "0.703125\\0.703125",
-             :rescaleIntercept    "-1024",
-             :rescaleSlope        "1",
+             :pixelRepresentation 1,
+             ;TODO: Careful pixel spacing has 2 values: first X, second Y, but program works just when X=Y
+             :pixelSpacing        0.703125, ;"0.703125\\0.703125",
+             :rescaleIntercept    -1024,
+             :rescaleSlope        1,
              :rows                512,
-             :sliceThickness      "1.25",
-             :windowCenter        "00040\\00040", ;40
-             :windowWidth         "00400\\00400"})
+             :sliceThickness      1.25,
+             :windowCenter        40, ;"00040\\00040", Use only the first value
+             :windowWidth         400}) ;"00400\\00400"  Use only the first value
 
 (def initial-state
   {
@@ -194,8 +195,8 @@
                       :series series      ;vem do Dicom
                       :pngs lstPngs       ;listas das URLs imagens em png / Dicom
                       :active-plane :all
-                      :windowing-center (js/parseInt (:windowCenter series))
-                      :windowing-width (js/parseInt (:windowWidth series))
+                      :windowing-center (:windowCenter series) ;(js/parseInt (:windowCenter series))
+                      :windowing-width  (:windowWidth  series) ;(js/parseInt (:windowWidth series))
                       :axial    {:x 0.5 :y 0.5 :zoom 1 :imgCoord 0.5}
                       :sagittal {:x 0.5 :y 0.5 :zoom 1 :imgCoord 0.5}
                       :frontal  {:x 0.5 :y 0.5 :zoom 1 :imgCoord 0.5}

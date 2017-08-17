@@ -330,7 +330,7 @@ module br.usp.dilvanLab.roi3DEditor {
          * @return the xyz coordinates
          */
         //@Override
-        xyzCoord(cursor:Sphere) {
+        private xyzCoord(cursor:Sphere) {
             const x1 = cursor.x; const y1= cursor.y; const plane= cursor.plane;
             const dz = this.sliceSpacing / (this.imgWidth * this.pixelSpacing);
             let x:number, y:number, z:number;

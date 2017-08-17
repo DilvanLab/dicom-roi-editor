@@ -18,16 +18,16 @@
 module br.usp.dilvanLab.roi3DEditor {
 
     export interface DicomSeriesInfo {
-        bitsStored:string;
+        bitsStored:number;
         columns:number;
         numberOfImages:number;
-        pixelRepresentation:string;
-        pixelSpacing:string;
-        rescaleIntercept:string;
-        rescaleSlope:string;
+        pixelRepresentation:number;
+        pixelSpacing:number;
+        rescaleIntercept:number;
+        rescaleSlope:number;
         rows:number;
-        sliceThickness:string;
-        windowCenter:string;
-        windowWidth:string;
+        sliceThickness:number;
+        windowCenter:number;
+        windowWidth:number;
     }
 }
