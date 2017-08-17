@@ -49,7 +49,7 @@
             for (let i=0; i<divs.length; i++) {
                 const c = divs[i].childNodes;
                 for(let j = 0; j < c.length; j++) {
-                    if ( c[j].nodeName.toLowerCase() === "canvas" ) {
+                    if ( c[j].nodeName.toLowerCase() === "dicom-roi-editor" ) {
                         c[j].resize(divs[i].clientWidth);
                         break;
                     }

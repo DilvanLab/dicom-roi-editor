@@ -65,9 +65,15 @@
 ;; -------------------------------
 ; [:canvas-event mode 
 
-(defn canvas [event] (.-target event))
+;(defn canvas [event] (.-target event))
+;
+;(defn editor [event] (.-editor (canvas event)))
 
-(defn editor [event] (.-editor (canvas event)))
+(defn editor [event] (.-editor (.-target event)))
+
+(defn canvas [event] (.-canvas (.-gl (editor event))))
+
+
 
 (defn get-mouse-pos [event]
   (let [rect (.getBoundingClientRect (canvas event))]
@@ -175,6 +181,16 @@
   (fn [db _]
     (merge db initial-state)))                              ;; what it returns becomes the new state
 
+(reg-event-db                                               ;; setup initial state
+  :read-patients                                               ;; usage:  (dispatch [:initialize])
+  (fn [db [_ [infoSTR]]]
+    (update-in db [:patients] #(js->clj (.parse js/JSON infoSTR)))))
+
+(reg-event-db                                               ;; setup initial state
+  :open-series                                               ;; usage:  (dispatch [:initialize])
+  (fn [db [_ [seriesInfoSTR]]]
+    ;ve se a serie ja existe
+    (update-in db [:views] #(% js->clj (.parse js/JSON infoSTR)))))
 
 (reg-event-db
   :canvas-event
@@ -229,12 +245,18 @@
   (fn [_ [_ value]]   ;; path middleware adjusts the first parameter
     value))
 
+
 ;; -- Subscription Handlers ---------------------------------------------------
 
 (reg-sub
   :initialize
   (fn [db _]
     (db :views)))
+
+(reg-sub
+  :read-patients
+  (fn [db _]
+    (db :patients)))
 
 (reg-sub
   :change-mode

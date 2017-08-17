@@ -17,8 +17,18 @@
   ~  You should have received a copy of the GNU General Public License
   ~  along with ePAD2.  If not, see <http://www.gnu.org/licenses/>.
   -->
+<!DOCTYPE html>
+<html>
+<head>
+  <!--script src="../bower_components/webcomponentsjs/webcomponents-lite.js"></script-->
+  <script type="text/javascript" src="js/app.js"></script>
 
-<link rel="import" href="../bower_components/polymer/polymer.html">
+  <link rel="import" href="../bower_components/polymer/polymer.html">
+  <!--link rel="import" href="../bower_components/polymer/polymer-element.html"-->
+
+  <title>Defining a Polymer Element from the Main Document</title>
+</head>
+<body>
 
 <!--
 A Polymer component to visualize Dicom images and edit 2D and 3D ROI (Regions of Interest).
@@ -28,19 +38,114 @@ It allows the edition of 2D (points, lines, polygons, etc) and 3D (masks) ROIs i
 
   <template>
 
-    <content></content>
+    <canvas id="canvas1"></canvas>
 
   </template>
 
-</dom-module>
-
-<script type="text/javascript" src="js/app.js"></script>
 
 <script>
+//  class DicomRoiEditor extends Polymer.Element{
+//      static get is() {return "dicom-roi-editor";}
+//      static get properties(){
+//          return {
+//              baseurl: {type: String, value: null},
+//              pngs: {type: Object, value: null},
+//              prefs: {type: Object, value:null},
+//              series: {type: Object, value: null},
+//
+//              windowingcenter: {type: Number, observer: '_updateRendering'},
+//              windowingwidth: {type: Number, observer: '_updateRendering'},
+//              activeplane: {type: String, observer: '_updateRendering'},
+//
+//              axial: {type: Object, observer: '_updateRendering'},
+//              frontal: {type: Object, observer: '_updateRendering'},
+//              sagittal: {type: Object, observer: '_updateRendering'},
+//
+//              sphere: {type: Object, observer: '_updateRendering'}
+//          }
+//      }
+//      static get observers() {return []}
+//      constructor() {super();}
+//
+//      //attached() {
+//      connectedCallback(){
+//          super.connectedCallback();
+//          // `attached` fires once the element and its parents have been inserted
+//          // into a document.
+//          let c = this.shadowRoot.querySelector('#canvas1');
+//          //let c = document.getElementById("Trr123");
+//          this._editor = new br.usp.dilvanLab.roi3DEditor.WebGLEditorImpl(c, 0, this.prefs, this.series);
+//          this.editor = this._editor;
+//          // So it can be found in canvas events
+//          //c.editor= this._editor;
+//          //alert("Canvas: "+ c.editor)
+//
+//
+//          let that= this;
+//          this.pngs.forEach(
+//              function(png, index, array){
+//                  that._editor.loadPngTexture(index, that.baseurl+png);
+//              }
+//          );
+//
+//          this._updateRendering();
+//          resizeCanvas();
+//      }
+//
+//      setPlane(i, obj){
+//          this._editor.setX(i, obj.x);
+//          this._editor.setY(i, obj.y);
+//          this._editor.setZoom(i, obj.zoom);
+//          this._editor.setImageCoord(i, obj.imgCoord);
+//      }
+//
+//      convertActivePlane(name){
+//          switch (name.toLowerCase()) {
+//              case "axial": return br.usp.dilvanLab.roi3DEditor.AXIAL;
+//              case "sagittal": return br.usp.dilvanLab.roi3DEditor.SAGITTAL;
+//              case "frontal": return br.usp.dilvanLab.roi3DEditor.FRONTAL;
+//              case "all": return br.usp.dilvanLab.roi3DEditor.ALL;
+//              default: return null;
+//          }
+//      }
+//
+//      _updateRendering(newValue, oldValue) {
+//          if (!this._editor) return;
+//          this._editor.activePlane = this.convertActivePlane(this.activeplane);
+//          this._editor.windowingCenter = this.windowingcenter;
+//          this._editor.windowingWidth = this.windowingwidth;
+//
+//          //alert(JSON.stringify(this.axial));
+//          this.setPlane(br.usp.dilvanLab.roi3DEditor.AXIAL, this.axial);
+//          this.setPlane(br.usp.dilvanLab.roi3DEditor.SAGITTAL, this.sagittal);
+//          this.setPlane(br.usp.dilvanLab.roi3DEditor.FRONTAL, this.frontal);
+//
+//          this._editor.setCursorCenter(this.convertActivePlane(this.sphere.plane), this.sphere.x, this.sphere.y);
+//          this._editor.cursorRadius = this.sphere.radius;
+//          if (!this.sphere.show)
+//              this._editor.cursorRadius = 0;
+//          this._editor.showSphere();
+//          //this._editor.stampSphere();
+//
+//          this._editor.drawImage();
+//      }
+//
+//      resize(size){
+//          //if (!this._canvas) return
+//          let c = this.shadowRoot.querySelector('#canvas1');
+//          if (!c) return;
+//          c.width= size;
+//          c.height = size;
+//          this._updateRendering();
+//      }
+//  }
+//  customElements.define(DicomRoiEditor.is, DicomRoiEditor);
+
+
 
   Polymer({
       is: "dicom-roi-editor",
-      extends: "canvas",
+      //extends: "canvas",
       properties: {
           baseurl: {type: String, value: null},
           pngs: {type: Object, value: null},
@@ -62,8 +167,14 @@ It allows the edition of 2D (points, lines, polygons, etc) and 3D (masks) ROIs i
       attached: function () {
           // `attached` fires once the element and its parents have been inserted
           // into a document.
-          this._editor = new br.usp.dilvanLab.roi3DEditor.WebGLEditorImpl(this, 0, this.prefs, this.series);
-          this.editor = this._editor;
+          //let c = this.shadowRoot.querySelector('#canvas1');
+          let c = document.querySelector('#canvas1');
+          //alert(c)
+          this._editor = new br.usp.dilvanLab.roi3DEditor.WebGLEditorImpl(c, 0, this.prefs, this.series);
+
+          // So it can be found in canvas events
+          c.editor= this._editor;
+          //this.editor = this._editor;
 
           let that= this;
           this.pngs.forEach(
@@ -115,18 +226,31 @@ It allows the edition of 2D (points, lines, polygons, etc) and 3D (masks) ROIs i
       },
 
       resize: function(size){
-          //if (!this._canvas) return;
-          this.width= size;
-          this.height= size;
+          //if (!this._canvas) return
+//          let c = document.getElementById("canvas1")
+//          if (!c) return;
+//          c.width= size;
+//          c.height = size;
+//          this._updateRendering();
+
+          //let c = this.shadowRoot.querySelector('#canvas1');
+          let c = document.querySelector('#canvas1');
+          if (!c) return;
+          c.width= size;
+          c.height = size;
           this._updateRendering();
       }
 
 
 
-  //      setCursorRadius: function(radius) {editor.cursorRadius = radius},
-//      showSphere: function() {editor.showSphere()},
-//      setCursorCenter: function(plane, x, y) {editor.setCursorCenter(plane, x, y)},
-//      stampSphere: function() {editor.stampSphere()}
+    //      setCursorRadius: function(radius) {editor.cursorRadius = radius},
+    //      showSphere: function() {editor.showSphere()},
+    //      setCursorCenter: function(plane, x, y) {editor.setCursorCenter(plane, x, y)},
+    //      stampSphere: function() {editor.stampSphere()}
   });
 
 </script>
+</dom-module>
+
+</body>
+</html>

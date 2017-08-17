@@ -184,11 +184,15 @@
              :windowWidth         "00400\\00400"})
 
 (def initial-state
-  {:current "editor0"
+  {
+   ;:patients [{:id "idPatient" :studies [{:id "idStudy" :series [{:id "idSeries"}]}]}]
+
+   ;:patients {"1231" {:id "1231" :studies {"idstudy" {:id "idstudy" :images {"idimage" {:id "idimage" :url "http://..."}}}}}}
+   :current "editor0"
    :tool :gradient
-   :views {"editor0" {:prefs pref
-                      :series series
-                      :pngs lstPngs
+   :views {"editor0" {:prefs pref         ;vem do Dicom
+                      :series series      ;vem do Dicom
+                      :pngs lstPngs       ;listas das URLs imagens em png / Dicom
                       :active-plane :all
                       :windowing-center (js/parseInt (:windowCenter series))
                       :windowing-width (js/parseInt (:windowWidth series))
@@ -196,3 +200,10 @@
                       :sagittal {:x 0.5 :y 0.5 :zoom 1 :imgCoord 0.5}
                       :frontal  {:x 0.5 :y 0.5 :zoom 1 :imgCoord 0.5}
                       :sphere   {:x 50  :y 50 :plane :axial :radius 0.2 :show false}}}})
+
+;(def initial-state
+;  {
+;   :patients [{:id "idPatient" :studies [{:id "idStudy" :series [{:id "idSeries"}]}]}]
+;   :current ""
+;   :tool :gradient
+;   :views {}})

@@ -40,6 +40,25 @@
                                        :min-width "35px"}
                     :on-touch-tap     #(dispatch event)}]])
 
+(defn patients-tab []
+  (let [patients (subscribe [:read-patients])]
+    (fn []
+      [ui/tree
+       [ui/toolbar-group ;{:first-child true}
+        [ui/toolbar-title {:text "Tools"}]
+        [button (ic/action-search) "zoom" (@patients :studies) [:change-mode :zoom]]
+        [button (ic/maps-my-location) "scroll" (= @mode :scroll) [:change-mode :scroll]]
+        [button (ic/image-brightness-6) "windowing" (= @mode :gradient) [:change-mode :gradient]]
+        [button (ic/action-pan-tool) "move" (= @mode :move) [:change-mode :move]]
+        [button (ic/action-polymer) "3D Edit" (= @mode :3D) [:change-mode :3D]]]
+       [ui/toolbar-group ;{:last-child true}
+        ;[ui/toolbar-separator]
+        [button (ic/communication-call-made) "move +1" false [:inc]]
+        [button (ic/communication-call-received) "move -1" false [:dec]]]])))
+
+; qaundo clicar na serie tem que chamar (get-series seriesID)
+
+
 (defn toolbar []
   (let [mode (subscribe [:change-mode])]
     (fn []
@@ -59,26 +78,26 @@
 (defn dicom-editor [editor-id]
   (let [views (subscribe [:canvas-event])]
     (fn []
-      [:canvas {:is "dicom-roi-editor"
-                :id editor-id
-                :prefs (js/JSON.stringify (clj->js (@views :prefs)))
-                :series (js/JSON.stringify (clj->js (@views :series)))
-                :pngs (js/JSON.stringify (clj->js (@views :pngs)))
-                :baseurl base-URL
-                :activeplane (@views :active-plane)
-                :windowingcenter (@views :windowing-center)
-                :windowingwidth (@views :windowing-width)
-                :axial (js/JSON.stringify (clj->js (@views :axial)))
-                :sagittal (js/JSON.stringify (clj->js (@views :sagittal)))
-                :frontal (js/JSON.stringify (clj->js (@views :frontal)))
-                :sphere (js/JSON.stringify (clj->js (@views :sphere)))
-                :on-mouse-down   (dispatch-canvas-event editor-id)
-                :on-mouse-up     (dispatch-canvas-event editor-id)
-                :on-mouse-move   (dispatch-canvas-event editor-id)
-                :on-mouse-out    (dispatch-canvas-event editor-id)
-                :on-double-click (dispatch-canvas-event editor-id)
-                :on-key-down     (dispatch-canvas-event editor-id)
-                :on-wheel        (dispatch-canvas-event editor-id)}])))
+      [:dicom-roi-editor { ;:is "dicom-roi-editor"}
+                          :id editor-id
+                          :prefs (js/JSON.stringify (clj->js (@views :prefs)))
+                          :series (js/JSON.stringify (clj->js (@views :series)))
+                          :pngs (js/JSON.stringify (clj->js (@views :pngs)))
+                          :baseurl base-URL
+                          :activeplane (@views :active-plane)
+                          :windowingcenter (@views :windowing-center)
+                          :windowingwidth (@views :windowing-width)
+                          :axial (js/JSON.stringify (clj->js (@views :axial)))
+                          :sagittal (js/JSON.stringify (clj->js (@views :sagittal)))
+                          :frontal (js/JSON.stringify (clj->js (@views :frontal)))
+                          :sphere (js/JSON.stringify (clj->js (@views :sphere)))
+                          :on-mouse-down   (dispatch-canvas-event editor-id)
+                          :on-mouse-up     (dispatch-canvas-event editor-id)
+                          :on-mouse-move   (dispatch-canvas-event editor-id)
+                          :on-mouse-out    (dispatch-canvas-event editor-id)
+                          :on-double-click (dispatch-canvas-event editor-id)
+                          :on-key-down     (dispatch-canvas-event editor-id)
+                          :on-wheel        (dispatch-canvas-event editor-id)}])))
 
 (defn simple-example []
   (let [editor-id (str "editor" 0)]
@@ -99,6 +118,7 @@
 (defn ^:export run
   []
   (dispatch-sync [:initialize])
+  ;(get-patients [:read-patients]) ;; callback calls  (dispatch [:read-patients [info]])
   ;(enable-re-frisk!)
   (render [simple-example]
           (js/document.getElementById "app")))
