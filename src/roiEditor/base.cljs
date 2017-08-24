@@ -65,15 +65,9 @@
 ;; -------------------------------
 ; [:canvas-event mode 
 
-;(defn canvas [event] (.-target event))
-;
-;(defn editor [event] (.-editor (canvas event)))
+(defn canvas [event] (.-target event))
 
-(defn editor [event] (.-editor (.-target event)))
-
-(defn canvas [event] (.-canvas (.-gl (editor event))))
-
-
+(defn editor [event] (.-editor (canvas event)))
 
 (defn get-mouse-pos [event]
   (let [rect (.getBoundingClientRect (canvas event))]
@@ -184,14 +178,10 @@
 (reg-event-db                                               ;; setup initial state
   :read-patients                                               ;; usage:  (dispatch [:initialize])
   (fn [db [_ [infoSTR]]]
-    (update-in db [:patients] #(js->clj (.parse js/JSON infoSTR)))))
-
-(reg-event-db                                               ;; setup initial state
-  :open-series                                               ;; usage:  (dispatch [:initialize])
-  (fn [db [_ [seriesInfoSTR]]]
-    ;ve se a serie ja existe
-    (update-in db [:views] #(% js->clj (.parse js/JSON seriesInfoSTR)))))
-
+    ;(assoc db :patients infoSTR)
+    (update-in db [:patients] #(js->clj (.parse js/JSON infoSTR)))
+    ;(update-in db [:patients] #(infoSTR) )))
+))
 (reg-event-db
   :canvas-event
   (fn [db [_ [event view-id]]]
@@ -229,6 +219,7 @@
                   [:views view :frontal :imgCoord] #(incn %)
                   [:views view :sagittal :imgCoord] #(incn %)))))
 
+
 (reg-event-db
   :dec
   (fn [db _]
@@ -245,6 +236,19 @@
   (fn [_ [_ value]]   ;; path middleware adjusts the first parameter
     value))
 
+(reg-event-db                                               ;; setup initial state
+  :open-series                                               ;; usage:  (dispatch [:initialize])
+  (fn [db [_ [seriesInfoSTR]]]
+    ;ve se a serie ja existe
+    (.log js/console (str "A" seriesInfoSTR "A"))
+    (assoc db :current "editor0")
+      (.log js/console (js->clj (.parse js/JSON seriesInfoSTR)))
+   (update-all db 
+              [:views "editor0" :pngs] #(js->clj (.parse js/JSON seriesInfoSTR))
+              [:views "editor0" :tab] #(str 1)
+              [:current] #(str "editor0") )
+    ;(update-in db [:current] "editor0" )
+    ))
 
 ;; -- Subscription Handlers ---------------------------------------------------
 
@@ -252,11 +256,6 @@
   :initialize
   (fn [db _]
     (db :views)))
-
-(reg-sub
-  :read-patients
-  (fn [db _]
-    (db :patients)))
 
 (reg-sub
   :change-mode
@@ -267,3 +266,9 @@
   :canvas-event
   (fn [db _]
     (get (db :views) (db :current))))
+
+(reg-sub
+  :read-patients
+  (fn [db _]
+    (db :patients)))
+

@@ -27,10 +27,12 @@
                  ;[rm-hull/jasentaa "0.2.3"]
                  [rm-hull/infix "0.2.11"]
                  [re-frisk "0.3.1"]
+                 [cljs-ajax "0.6.0"]
                  ;[figwheel-sidecar "0.5.8"]]
                  ;[binaryage/dirac "RELEASE"]
                  [binaryage/devtools "RELEASE"]]
                  ;[binaryage/dirac "RELEASE"]]
+
 
   :plugins [[lein-cljsbuild "1.1.5"]
             ;[lein-shell "0.5.0"]
@@ -63,10 +65,10 @@
                                 :compiler     {:output-dir "resources/public/js"
                                                :output-to  "resources/public/js/client.js"}}}}
   :typescript {
-               :sources ["resources/public/dicom-roi-editor/ts/*.ts"]
+               :sources ["resources/public/bower_components/dicom-roi-editor/ts/*.ts"]
                :excludes [""]
                ;:watch true
-               :out "resources/public/dicom-roi-editor/js/app.js"
+               :out "resources/public/bower_components/dicom-roi-editor/js/app.js"
                ;:out-dir "target"
                ;:module :amd
                :declaration true

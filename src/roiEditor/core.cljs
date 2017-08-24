@@ -26,11 +26,14 @@
             [cljs-react-material-ui.core :refer [get-mui-theme color]]
             [roiEditor.base :refer [dispatch-canvas-event]]
             [roiEditor.tools]
+            [ajax.core :refer [GET]]
             [re-frisk.core :refer [enable-re-frisk!]]))
 
 ;; -- View Components ---------------------------------------------------------
 
 (def base-URL "1.2.826.0.1.3680043.8.420.29267207592271555902603369361594637742/series/1.2.826.0.1.3680043.8.420.13029244630897359628709378005929429184/images/");
+
+(def base-URL-server "http://localhost:8080")
 
 (defn button [icon tooltip selected event]
   [:div {:title tooltip}
@@ -39,22 +42,6 @@
                     :style            {:margin    "12px 0px"
                                        :min-width "35px"}
                     :on-touch-tap     #(dispatch event)}]])
-
-(defn patients-tab []
-  (let [patients (subscribe [:read-patients])]
-    (fn []
-      [ui/toolbar
-       [ui/toolbar-group ;{:first-child true}
-        [ui/toolbar-title {:text "Tools"}]
-        [button (ic/action-search) "zoom" (@patients :studies) [:change-mode :zoom]]]
-
-       [ui/toolbar-group ;{:last-child true}
-        ;[ui/toolbar-separator]
-        [button (ic/communication-call-made) "move +1" false [:inc]]
-        [button (ic/communication-call-received) "move -1" false [:dec]]]])))
-
-; qaundo clicar na serie tem que chamar (get-series seriesID)
-
 
 (defn toolbar []
   (let [mode (subscribe [:change-mode])]
@@ -75,26 +62,68 @@
 (defn dicom-editor [editor-id]
   (let [views (subscribe [:canvas-event])]
     (fn []
-      [:dicom-roi-editor { ;:is "dicom-roi-editor"}
-                          :id editor-id
-                          :prefs (js/JSON.stringify (clj->js (@views :prefs)))
-                          :series (js/JSON.stringify (clj->js (@views :series)))
-                          :pngs (js/JSON.stringify (clj->js (@views :pngs)))
-                          :baseurl base-URL
-                          :activeplane (@views :active-plane)
-                          :windowingcenter (@views :windowing-center)
-                          :windowingwidth (@views :windowing-width)
-                          :axial (js/JSON.stringify (clj->js (@views :axial)))
-                          :sagittal (js/JSON.stringify (clj->js (@views :sagittal)))
-                          :frontal (js/JSON.stringify (clj->js (@views :frontal)))
-                          :sphere (js/JSON.stringify (clj->js (@views :sphere)))
-                          :on-mouse-down   (dispatch-canvas-event editor-id)
-                          :on-mouse-up     (dispatch-canvas-event editor-id)
-                          :on-mouse-move   (dispatch-canvas-event editor-id)
-                          :on-mouse-out    (dispatch-canvas-event editor-id)
-                          :on-double-click (dispatch-canvas-event editor-id)
-                          :on-key-down     (dispatch-canvas-event editor-id)
-                          :on-wheel        (dispatch-canvas-event editor-id)}])))
+      [:canvas {:is "dicom-roi-editor"
+                :id editor-id
+                :prefs (js/JSON.stringify (clj->js (@views :prefs)))
+                :series (js/JSON.stringify (clj->js (@views :series)))
+                :pngs (js/JSON.stringify (clj->js (@views :pngs)))
+                :baseurl base-URL-server
+                :activeplane (@views :active-plane)
+                :windowingcenter (@views :windowing-center)
+                :windowingwidth (@views :windowing-width)
+                :axial (js/JSON.stringify (clj->js (@views :axial)))
+                :sagittal (js/JSON.stringify (clj->js (@views :sagittal)))
+                :frontal (js/JSON.stringify (clj->js (@views :frontal)))
+                :sphere (js/JSON.stringify (clj->js (@views :sphere)))
+                :on-mouse-down   (dispatch-canvas-event editor-id)
+                :on-mouse-up     (dispatch-canvas-event editor-id)
+                :on-mouse-move   (dispatch-canvas-event editor-id)
+                :on-mouse-out    (dispatch-canvas-event editor-id)
+                :on-double-click (dispatch-canvas-event editor-id)
+                :on-key-down     (dispatch-canvas-event editor-id)
+                :on-wheel        (dispatch-canvas-event editor-id)}])))
+
+
+
+(defn handler [response]
+  ;  (.log js/console (str response))
+  (dispatch [:read-patients [(str response)]]))
+
+(defn get-patients []
+  (GET "http://localhost:3000/all" {:handler handler}))
+
+(defn open-serie [response]
+  ;(.log js/console (str response))
+  (dispatch [:open-series [(str response)] ]))
+
+(defn get-serie [serieId]
+  (GET "http://localhost:3000/objects" {:params {:serieId serieId}
+                                        :handler open-serie}))
+    
+
+(defn menu-dicom []
+  (let [patients (subscribe [:read-patients])]
+    [ui/menu
+      (for [serie @patients] 
+        [ui/menu-item {:primary-text (str (serie "series_iuid")) 
+                        :on-touch-tap #(get-serie (str (serie "series_iuid")))}]
+        )]))
+
+(defn patients-tabs []
+  (let [views (subscribe [:canvas-event])]
+    [ui/tabs 
+          [ui/tab {:label "Menu" :value "0"}
+            [:div 
+              [menu-dicom]]]
+          (if (not (nil? @views))
+            [ui/tab {:label "Tab2" :value "1"}
+              [:div 
+                [toolbar "editor0"]
+                ;(for [path (take 5 (@views :pngs))]
+                 ; [:img {:src (str "http://localhost:8080" path)}])
+                  [dicom-editor "editor0"]
+                  ]])]))
+
 
 (defn simple-example []
   (let [editor-id (str "editor" 0)]
@@ -104,10 +133,13 @@
      [:div
       [ui/app-bar {:title                 "ePAD2"
                    :icon-class-name-right "muidocs-icon-navigation-expand-more"}]
-      [toolbar editor-id]
+      [patients-tabs]
+      ;[toolbar editor-id]
+      ;[menu-dicom]
       [ui/paper
        [:div {:class "editor-holder"}
-        [dicom-editor editor-id]]]]]))
+        ;[dicom-editor editor-id]
+        ]]]]))
 
 
 ;; -- Entry Point -------------------------------------------------------------
@@ -115,7 +147,7 @@
 (defn ^:export run
   []
   (dispatch-sync [:initialize])
-  ;(get-patients [:read-patients]) ;; callback calls  (dispatch [:read-patients [info]])
+  (get-patients)
   ;(enable-re-frisk!)
   (render [simple-example]
           (js/document.getElementById "app")))
