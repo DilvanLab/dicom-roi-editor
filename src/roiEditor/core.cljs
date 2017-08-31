@@ -83,31 +83,23 @@
                 :on-key-down     (dispatch-canvas-event editor-id)
                 :on-wheel        (dispatch-canvas-event editor-id)}])))
 
-
-
-(defn handler [response]
-  ;  (.log js/console (str response))
-  (dispatch [:read-patients [(str response)]]))
-
 (defn get-patients []
-  (GET "http://localhost:3000/all" {:handler handler}))
+  (GET "http://localhost:3000/allSeries" {:handler #(dispatch [:read-patients [%]])})) ;:keywords? true}))
 
-(defn open-serie [response]
-  ;(.log js/console (str response))
-  (dispatch [:open-series [(str response)] ]))
+(defn get-series [seriesId]
+  ;(js/alert seriesId)
+  (GET "http://localhost:3000/objects" {:params {:serieId seriesId}
+                                        :handler #(dispatch [:open-series [%]])}))
+;:handler #(dispatch [:open-series [%]])
 
-(defn get-serie [serieId]
-  (GET "http://localhost:3000/objects" {:params {:serieId serieId}
-                                        :handler open-serie}))
-    
 
 (defn menu-dicom []
   (let [patients (subscribe [:read-patients])]
     [ui/menu
       (for [serie @patients] 
         [ui/menu-item {:primary-text (str (serie "series_iuid")) 
-                        :on-touch-tap #(get-serie (str (serie "series_iuid")))}]
-        )]))
+                        :on-touch-tap #(get-series (str (serie "series_iuid")))}])]))
+
 
 (defn patients-tabs []
   (let [views (subscribe [:canvas-event])]
@@ -121,8 +113,8 @@
                 [toolbar "editor0"]
                 ;(for [path (take 5 (@views :pngs))]
                  ; [:img {:src (str "http://localhost:8080" path)}])
-                  [dicom-editor "editor0"]
-                  ]])]))
+                [dicom-editor "editor0"]]])]))
+
 
 
 (defn simple-example []
@@ -137,9 +129,9 @@
       ;[toolbar editor-id]
       ;[menu-dicom]
       [ui/paper
-       [:div {:class "editor-holder"}
+       [:div {:class "editor-holder"}]]]]))
         ;[dicom-editor editor-id]
-        ]]]]))
+
 
 
 ;; -- Entry Point -------------------------------------------------------------

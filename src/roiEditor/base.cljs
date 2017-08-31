@@ -175,13 +175,20 @@
   (fn [db _]
     (merge db initial-state)))                              ;; what it returns becomes the new state
 
+;(reg-event-db                                               ;; setup initial state
+;  :read-patients                                               ;; usage:  (dispatch [:initialize])
+;  (fn [db [_ [patients]]]
+;    ;(assoc db :patients infoSTR)
+;    (assoc-in db [:patients] patients))) ;#(js->clj (.parse js/JSON infoSTR)))))
+;    ;(update-in db [:patients] #(infoSTR) )))
+
 (reg-event-db                                               ;; setup initial state
   :read-patients                                               ;; usage:  (dispatch [:initialize])
-  (fn [db [_ [infoSTR]]]
+  (fn [db [_ [patients]]]
     ;(assoc db :patients infoSTR)
-    (update-in db [:patients] #(js->clj (.parse js/JSON infoSTR)))
-    ;(update-in db [:patients] #(infoSTR) )))
-))
+    ;(js/alert (js->clj (.parse js/JSON infoSTR)))
+    (assoc-in db [:patients] patients)))
+
 (reg-event-db
   :canvas-event
   (fn [db [_ [event view-id]]]
@@ -208,12 +215,20 @@
         (assoc-all db [:views view-id] new
                    [:current] view-id)
         db))))
+;(-> db
+;    (assoc-in [:views view-id] new)
+;    (assoc-in [:current] view-id))
 
 (reg-event-db
   :inc
   (fn [db _]
     (let [incn #(if (> (+ % 0.01) 0.99) 0.99 (+ % 0.01))
           view (db :current)]
+      ;(-> db
+      ;    (update-in [:views view :axial :imgCoord] #(incn %))
+      ;    (update-in [:views view :frontal :imgCoord] #(incn %))
+      ;    (update-in [:views view :sagittal :imgCoord] #(incn %)))
+
       (update-all db
                   [:views view :axial :imgCoord] #(incn %)
                   [:views view :frontal :imgCoord] #(incn %)
@@ -236,19 +251,28 @@
   (fn [_ [_ value]]   ;; path middleware adjusts the first parameter
     value))
 
-(reg-event-db                                               ;; setup initial state
-  :open-series                                               ;; usage:  (dispatch [:initialize])
+;(reg-event-db                                               ;; setup initial state
+;  :open-series                                               ;; usage:  (dispatch [:initialize])
+;  (fn [db [_ [series]]]
+;    ;ve se a serie ja existe
+;    ;(.log js/console (str "A" seriesInfoSTR "A"))
+;    ;(assoc db :current "editor0")
+;    ;(.log js/console series) ;(js->clj (.parse js/JSON seriesInfoSTR)))
+;    (-> db
+;           (assoc-in [:views "editor0" :pngs] series) ;#(js->clj (.parse js/JSON seriesInfoSTR))
+;           (assoc-in [:views "editor0" :tab] "1")
+;           (assoc-in [:current] "editor0"))))
+;    ;(update-in db [:current] "editor0" )
+
+(reg-event-db
+  :open-series
   (fn [db [_ [seriesInfoSTR]]]
-    ;ve se a serie ja existe
-    (.log js/console (str "A" seriesInfoSTR "A"))
-    (assoc db :current "editor0")
-      (.log js/console (js->clj (.parse js/JSON seriesInfoSTR)))
-   (update-all db 
-              [:views "editor0" :pngs] #(js->clj (.parse js/JSON seriesInfoSTR))
-              [:views "editor0" :tab] #(str 1)
-              [:current] #(str "editor0") )
-    ;(update-in db [:current] "editor0" )
-    ))
+    ;(assoc db :current "editor0")
+    (.log js/console (clj->js seriesInfoSTR))
+    (assoc-all db
+                [:views "editor0" :pngs] seriesInfoSTR
+                [:views "editor0" :tab] "1"
+                [:current] "editor0")))
 
 ;; -- Subscription Handlers ---------------------------------------------------
 
