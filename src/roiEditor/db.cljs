@@ -184,24 +184,25 @@
              :windowCenter        40, ;"00040\\00040", Use only the first value
              :windowWidth         400}) ;"00400\\00400"  Use only the first value
 
+(def first-view  {"editor0" {:prefs pref         ;vem do Dicom
+                             :series series      ;vem do Dicom
+                             :pngs lstPngs       ;listas das URLs imagens em png / Dicom
+                             :active-plane :all
+                             :windowing-center (:windowCenter series) ;(js/parseInt (:windowCenter series))
+                             :windowing-width  (:windowWidth  series) ;(js/parseInt (:windowWidth series))
+                             :axial    {:x 0.5 :y 0.5 :zoom 1 :imgCoord 0.5}
+                             :sagittal {:x 0.5 :y 0.5 :zoom 1 :imgCoord 0.5}
+                             :frontal  {:x 0.5 :y 0.5 :zoom 1 :imgCoord 0.5}
+                             :sphere   {:x 50  :y 50 :plane :axial :radius 0.2 :show false}}})
+
 (def initial-state
   {
    ;:patients [{:id "idPatient" :studies [{:id "idStudy" :series [{:id "idSeries"}]}]}]
 
    ;:patients {"1231" {:id "1231" :studies {"idstudy" {:id "idstudy" :images {"idimage" {:id "idimage" :url "http://..."}}}}}}
-   :current "editor0"
+   :current ""
    :tool :gradient
-   :views {"editor0" {:prefs pref         ;vem do Dicom
-                      :series series      ;vem do Dicom
-                      :pngs lstPngs       ;listas das URLs imagens em png / Dicom
-                      :active-plane :all
-                      :windowing-center (:windowCenter series) ;(js/parseInt (:windowCenter series))
-                      :windowing-width  (:windowWidth  series) ;(js/parseInt (:windowWidth series))
-                      :axial    {:x 0.5 :y 0.5 :zoom 1 :imgCoord 0.5}
-                      :sagittal {:x 0.5 :y 0.5 :zoom 1 :imgCoord 0.5}
-                      :frontal  {:x 0.5 :y 0.5 :zoom 1 :imgCoord 0.5}
-                      :sphere   {:x 50  :y 50 :plane :axial :radius 0.2 :show false}}}})
-
+   :views {}})
 ;(def initial-state
 ;  {
 ;   :patients [{:id "idPatient" :studies [{:id "idStudy" :series [{:id "idSeries"}]}]}]

@@ -20,7 +20,7 @@
 (ns roiEditor.base
   (:require-macros [roiEditor.macros :refer [$]])
   (:require [re-frame.core :refer [reg-event-db reg-sub path dispatch]]
-            [roiEditor.db :refer [initial-state]]))
+            [roiEditor.db :refer [initial-state first-view]]))
 
 ;;   Browser events
 ;;
@@ -44,23 +44,23 @@
 
 (defn clip [[a b] x] (max (min x b) a))
 
-(defn update-all [map a b & args]
-  (let [num (count args)
-        map1 (update-in map a b)]
-    (if (even? num)
-      (if (zero? num)
-        map1
-        (apply update-all map1 args))
-      (throw (js/Error. "update-all has one db and path and function pairs.")))))
-
-(defn assoc-all [map a b & args]
-  (let [num (count args)
-        map1 (assoc-in map a b)]
-    (if (even? num)
-      (if (zero? num)
-        map1
-        (apply assoc-all map1 args))
-      (throw (js/Error. "assoc-all has one db and path and function pairs.")))))
+;(defn update-all [map a b & args]
+;  (let [num (count args)
+;        map1 (update-in map a b)]
+;    (if (even? num)
+;      (if (zero? num)
+;        map1
+;        (apply update-all map1 args))
+;      (throw (js/Error. "update-all has one db and path and function pairs.")))))
+;
+;(defn assoc-all [map a b & args]
+;  (let [num (count args)
+;        map1 (assoc-in map a b)]
+;    (if (even? num)
+;      (if (zero? num)
+;        map1
+;        (apply assoc-all map1 args))
+;      (throw (js/Error. "assoc-all has one db and path and function pairs.")))))
 
 ;; -------------------------------
 ; [:canvas-event mode 
@@ -175,18 +175,9 @@
   (fn [db _]
     (merge db initial-state)))                              ;; what it returns becomes the new state
 
-;(reg-event-db                                               ;; setup initial state
-;  :read-patients                                               ;; usage:  (dispatch [:initialize])
-;  (fn [db [_ [patients]]]
-;    ;(assoc db :patients infoSTR)
-;    (assoc-in db [:patients] patients))) ;#(js->clj (.parse js/JSON infoSTR)))))
-;    ;(update-in db [:patients] #(infoSTR) )))
-
 (reg-event-db                                               ;; setup initial state
   :read-patients                                               ;; usage:  (dispatch [:initialize])
   (fn [db [_ [patients]]]
-    ;(assoc db :patients infoSTR)
-    ;(js/alert (js->clj (.parse js/JSON infoSTR)))
     (assoc-in db [:patients] patients)))
 
 (reg-event-db
@@ -212,8 +203,9 @@
                    (canvas-event view1 mode event))
                ;; default
                (canvas-event view1 mode event))]
-        (assoc-all db [:views view-id] new
-                   [:current] view-id)
+        (-> db
+            (assoc-in [:views view-id] new)
+            (assoc-in [:current] view-id))
         db))))
 ;(-> db
 ;    (assoc-in [:views view-id] new)
@@ -224,26 +216,20 @@
   (fn [db _]
     (let [incn #(if (> (+ % 0.01) 0.99) 0.99 (+ % 0.01))
           view (db :current)]
-      ;(-> db
-      ;    (update-in [:views view :axial :imgCoord] #(incn %))
-      ;    (update-in [:views view :frontal :imgCoord] #(incn %))
-      ;    (update-in [:views view :sagittal :imgCoord] #(incn %)))
-
-      (update-all db
-                  [:views view :axial :imgCoord] #(incn %)
-                  [:views view :frontal :imgCoord] #(incn %)
-                  [:views view :sagittal :imgCoord] #(incn %)))))
-
+      (-> db
+          (update-in [:views view :axial :imgCoord] #(incn %))
+          (update-in [:views view :frontal :imgCoord] #(incn %))
+          (update-in [:views view :sagittal :imgCoord] #(incn %))))))
 
 (reg-event-db
   :dec
   (fn [db _]
     (let [decn #(if (< (- % 0.01) 0) 0 (- % 0.01))
           view (db :current)]
-      (update-all db
-                  [:views view :axial :imgCoord] #(decn %)
-                  [:views view :frontal :imgCoord] #(decn %)
-                  [:views view :sagittal :imgCoord] #(decn %)))))
+      (-> db
+          (update-in [:views view :axial :imgCoord] #(decn %))
+          (update-in [:views view :frontal :imgCoord] #(decn %))
+          (update-in [:views view :sagittal :imgCoord] #(decn %))))))
 
 (reg-event-db
   :change-mode
@@ -267,12 +253,12 @@
 (reg-event-db
   :open-series
   (fn [db [_ [seriesInfoSTR]]]
-    ;(assoc db :current "editor0")
-    (.log js/console (clj->js seriesInfoSTR))
-    (assoc-all db
-                [:views "editor0" :pngs] seriesInfoSTR
-                [:views "editor0" :tab] "1"
-                [:current] "editor0")))
+    ;(.log js/console (clj->js seriesInfoSTR))
+    (-> db
+        (assoc-in [:views] first-view)
+        (assoc-in [:views "editor0" :pngs] seriesInfoSTR)
+        (assoc-in [:current] "editor0"))))
+       ;(assoc-in [:views "editor0" :tab] "1")
 
 ;; -- Subscription Handlers ---------------------------------------------------
 
@@ -296,3 +282,7 @@
   (fn [db _]
     (db :patients)))
 
+(reg-sub
+  :open-series
+  (fn [db _]
+    db))

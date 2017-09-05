@@ -20,7 +20,7 @@
 (ns roiEditor.tools
   (:require-macros [roiEditor.macros :refer [when-let*]])
   (:require [roiEditor.base :refer [which-plane active-plane editor
-                                    movement-x movement-y update-all assoc-all clip canvas
+                                    movement-x movement-y clip canvas
                                     plane2number get-mouse canvas-event
                                     WHEEL MOUSE-MOVE MOUSE-DOWN MOUSE-UP MOUSE-OUT KEY-DOWN]]))
 
@@ -38,9 +38,9 @@
               deltaX (* mult (.pixels2Units (editor event) (plane2number plane) (movement-x event)))
               deltaY (* mult (.pixels2Units (editor event) (plane2number plane) (movement-y event))
                         -1)]
-             (update-all view
-                         [plane :x] #(- % deltaX)
-                         [plane :y] #(- % deltaY))))
+             (-> view
+                 (update-in [plane :x] #(- % deltaX))
+                 (update-in [plane :y] #(- % deltaY)))))
 
 ;;
 ;;   Zoom
@@ -78,9 +78,9 @@
           :sagittal [:frontal  (.xCoord (editor event) (- 1 (.-x pt))) :axial (- 1 (.-y pt))]
           [nil nil nil nil])]
     (cond plane1
-          (assoc-all view
-                     [plane1 :imgCoord] coord1
-                     [plane2 :imgCoord] coord2))))
+          (-> view
+              (assoc-in [plane1 :imgCoord] coord1)
+              (assoc-in [plane2 :imgCoord] coord2)))))
 
 ;;
 ;;    Scroll
@@ -112,10 +112,9 @@
         default-ww (-> view :series :windowCenter) ;(js/parseInt(-> view :series :windowCenter))
         deltaWW (* (/ (* 4 (movement-x event)) (.-width  canvas)) default-ww)
         deltaWC (* (/ (* 4 (movement-y event)) (.-height canvas)) default-wc)]
-    (update-all
-      view
-      [:windowing-center] #(if (<= (+ % deltaWC) 0) % (+ % deltaWC))
-      [:windowing-width]  #(if (<= (+ % deltaWW) 0) % (+ % deltaWW)))))
+    (-> view
+        (update-in [:windowing-center] #(if (<= (+ % deltaWC) 0) % (+ % deltaWC)))
+        (update-in [:windowing-width]  #(if (<= (+ % deltaWW) 0) % (+ % deltaWW))))))
 
 ;;
 ;;   3D
@@ -123,26 +122,26 @@
 (defmethod canvas-event [:3D MOUSE-DOWN] [view mode event]
   (when-let* [mouse (get-mouse event)
               plane (which-plane event)]
-             (update-all view
-                         [:sphere] (fn [x]
-                                     {:x (mouse :x) :y (mouse :y) :plane plane :radius (x :radius) :show true}))))
+             (update-in view
+                        [:sphere] (fn [x]
+                                    {:x (mouse :x) :y (mouse :y) :plane plane :radius (x :radius) :show true}))))
 
 (defmethod canvas-event [:3D MOUSE-MOVE] [view mode event]
   (when-let* [mouse (get-mouse event)
               plane (which-plane event)]
-             (update-all view
-                         [:sphere] (fn [x]
-                                     {:x (mouse :x) :y (mouse :y) :plane plane :radius (x :radius) :show true}))))
+             (update-in view
+                        [:sphere] (fn [x]
+                                    {:x (mouse :x) :y (mouse :y) :plane plane :radius (x :radius) :show true}))))
 
 (defmethod canvas-event [:3D MOUSE-UP] [view mode event]
   (do
     (.stampSphere (editor event))
-    (update-all view
+    (update-in view
                [:sphere :radius] #(+ % 0.0001))))
 
 (defmethod canvas-event [:3D MOUSE-OUT] [view mode event]
-  (assoc-all view
-             [:sphere :show] false))
+  (assoc-in view
+            [:sphere :show] false))
 
 (defmethod canvas-event [:3D WHEEL] [view mode event]
   (update-in view

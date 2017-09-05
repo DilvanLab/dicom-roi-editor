@@ -168,17 +168,17 @@ It allows the edition of 2D (points, lines, polygons, etc) and 3D (masks) ROIs i
           // `attached` fires once the element and its parents have been inserted
           // into a document.
           //let c = this.shadowRoot.querySelector('#canvas1');
-          let c = document.querySelector('#canvas1');
-          //alert(c)
-          this._editor = new br.usp.dilvanLab.roi3DEditor.WebGLEditorImpl(c, 0, this.prefs, this.series);
+          const cnv = document.querySelector('#canvas1');
+          this._editor = new br.usp.dilvanLab.roi3DEditor.WebGLEditorImpl(cnv, 0, this.prefs, this.series);
 
           // So it can be found in canvas events
-          c.editor= this._editor;
+          cnv.editor= this._editor;
           //this.editor = this._editor;
 
-          let that= this;
+          const that= this;
           this.pngs.forEach(
-              function(png, index, array){
+              (png, index, array)=>{
+                  console.log(that.baseurl+png);
                   that._editor.loadPngTexture(index, that.baseurl+png);
               }
           );
@@ -234,7 +234,7 @@ It allows the edition of 2D (points, lines, polygons, etc) and 3D (masks) ROIs i
 //          this._updateRendering();
 
           //let c = this.shadowRoot.querySelector('#canvas1');
-          let c = document.querySelector('#canvas1');
+          const c = document.querySelector('#canvas1');
           if (!c) return;
           c.width= size;
           c.height = size;
