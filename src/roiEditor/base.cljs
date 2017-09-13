@@ -18,7 +18,7 @@
 ;
 
 (ns roiEditor.base
-  (:require-macros [roiEditor.macros :refer [$]])
+  ;(:require-macros [roiEditor.macros :refer [$]])
   (:require [re-frame.core :refer [reg-event-db reg-sub path dispatch]]
             [roiEditor.db :refer [initial-state first-view]]))
 

@@ -18,7 +18,7 @@
 ;
 
 (ns roiEditor.core
-  (:require-macros [roiEditor.macros :refer [$]])
+  ;(:require-macros [roiEditor.macros :refer [$]])
   (:require [reagent.core :refer [render]]
             [re-frame.core :refer [dispatch dispatch-sync subscribe]]
             [cljs-react-material-ui.reagent :as ui]
@@ -26,8 +26,8 @@
             [cljs-react-material-ui.core :refer [get-mui-theme color]]
             [roiEditor.base :refer [dispatch-canvas-event]]
             [roiEditor.tools]
-            [ajax.core :refer [GET]]
-            [re-frisk.core :refer [enable-re-frisk!]]))
+            [ajax.core :refer [GET]]))
+            ;[re-frisk.core :refer [enable-re-frisk!]]))
 
 ;; -- View Components ---------------------------------------------------------
 
@@ -39,29 +39,56 @@
 
 
 
-(defn button [icon tooltip selected event]
-  [:div {:title tooltip}
-   [ui/flat-button {:icon             icon
-                    :background-color (if selected "#d0d060" (color :background-color))
-                    :style            {:margin    "12px 0px"
-                                       :min-width "35px"}
-                    :on-touch-tap     #(dispatch event)}]])
+;(defn button [icon tooltip selected event]
+;  [:div {:title tooltip}
+;   [ui/flat-button {:icon             icon
+;                    :background-color (if selected "#d0d060" (color :background-color))
+;                    :style            {:margin    "12px 0px"
+;                                       :min-width "35px"}
+;                    :on-touch-tap     #(dispatch event)}]])
 
-(defn toolbar []
-  (let [mode (subscribe [:change-mode])]
-    (fn []
+(defn toolbar-cmp [mode disp-fn]
+  (let [button (fn [icon tooltip selected event]
+                 [:div {:title tooltip}
+                  [ui/flat-button {:icon             icon
+                                   :background-color (if selected "#d0d060" (color :background-color))
+                                   :style            {:margin    "12px 0px"
+                                                      :min-width "35px"}
+                                   :on-touch-tap     (fn [] (disp-fn event))}]])]
+
       [ui/toolbar
        [ui/toolbar-group ;{:first-child true}
         [ui/toolbar-title {:text "Tools"}]
-        [button (ic/action-search) "zoom" (= @mode :zoom) [:change-mode :zoom]]
-        [button (ic/maps-my-location) "scroll" (= @mode :scroll) [:change-mode :scroll]]
-        [button (ic/image-brightness-6) "windowing" (= @mode :gradient) [:change-mode :gradient]]
-        [button (ic/action-pan-tool) "move" (= @mode :move) [:change-mode :move]]
-        [button (ic/action-polymer) "3D Edit" (= @mode :3D) [:change-mode :3D]]]
+        (button (ic/action-search) "zoom" (= mode :zoom) [:change-mode :zoom])
+        (button (ic/maps-my-location) "scroll" (= mode :scroll) [:change-mode :scroll])
+        (button (ic/image-brightness-6) "windowing" (= mode :gradient) [:change-mode :gradient])
+        (button (ic/action-pan-tool) "move" (= mode :move) [:change-mode :move])
+        (button (ic/action-polymer) "3D Edit" (= mode :3D) [:change-mode :3D])]
        [ui/toolbar-group ;{:last-child true}
         ;[ui/toolbar-separator]
-        [button (ic/communication-call-made) "move +1" false [:inc]]
-        [button (ic/communication-call-received) "move -1" false [:dec]]]])))
+        (button (ic/communication-call-made) "move +1" false [:inc])
+        (button (ic/communication-call-received) "move -1" false [:dec])]]))
+
+(defn toolbar []
+  (let [mode (subscribe [:change-mode])
+        disp-fn #(dispatch %1)]
+    (fn [] [:div (toolbar-cmp @mode disp-fn)])))
+
+;(defn toolbar []
+;  (let [mode (subscribe [:change-mode])]
+;    (fn []
+;      [ui/toolbar
+;       [ui/toolbar-group ;{:first-child true}
+;        [ui/toolbar-title {:text "Tools"}]
+;        [button (ic/action-search) "zoom" (= @mode :zoom) [:change-mode :zoom]]
+;        [button (ic/maps-my-location) "scroll" (= @mode :scroll) [:change-mode :scroll]]
+;        [button (ic/image-brightness-6) "windowing" (= @mode :gradient) [:change-mode :gradient]]
+;        [button (ic/action-pan-tool) "move" (= @mode :move) [:change-mode :move]]
+;        [button (ic/action-polymer) "3D Edit" (= @mode :3D) [:change-mode :3D]]]
+;       [ui/toolbar-group ;{:last-child true}
+;        ;[ui/toolbar-separator]
+;        [button (ic/communication-call-made) "move +1" false [:inc]]
+;        [button (ic/communication-call-received) "move -1" false [:dec]]]])))
 
 (defn dicom-editor []
   (let [views (subscribe [:canvas-event])
@@ -69,7 +96,7 @@
     (fn []
       ;(js/alert (js/JSON.stringify (clj->js (@views :pngs))))
       [:div
-       [:p "Running Editor"]
+       [:p "Running Efdg dfgdfgditor"]
        [:dicom-roi-editor
                 {;:is "dicom-roi-editor"
                  :id editor-id
@@ -124,7 +151,7 @@
 
 (defn make-tabs [views]
   (map (fn [x] [ui/tab {:key (first x) :label (first x) :value "1"}
-                [:div
+                [:div {:class "editor-holder"}
                   [toolbar]
                   ;(for [path (take 5 (@views :pngs))]
                   ; [:img {:src (str "http://localhost:8080" path)}])
@@ -153,12 +180,22 @@
       ;[toolbar editor-id]
       ;[menu-dicom]
       [ui/paper
-       [:div {:class "editor-holder"}
+       [:div
         [patients-tabs]]]]]);[dicom-editor editor-id]
 
 
 
 ;; -- Entry Point -------------------------------------------------------------
+
+(enable-console-print!)
+
+;(println "This text is printed from src/roiEditor/core.cljs. Go ahead and edit it and see reloading in action.")
+
+(defn on-js-reload [])
+;; optionally touch your app-state to force rerendering depending on
+;; your application
+;; (swap! app-state update-in [:__figwheel_counter] inc)
+
 
 (defn ^:export run
   []

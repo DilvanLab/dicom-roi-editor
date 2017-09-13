@@ -17,8 +17,8 @@
 ;  along with ePAD2.  If not, see <http://www.gnu.org/licenses/>.
 ;
 
-(ns roiEditor.macros
-  (:require [infix.macros :refer [infix]]))
+(ns roiEditor.macros)
+  ;(:require [infix.macros :refer [infix]]))
 
 
 (defmacro when-let*
@@ -31,11 +31,11 @@
         (when-let* ~(drop 2 bindings) ~@body))
      `(do ~@body))))
 
-(defmacro $
-  "Takes an infix expression, resolves an aliases before rewriting the
-   infix expressions into standard LISP prefix expressions."
-  [& expr]
-  `(infix ~expr))
+;(defmacro $
+;  "Takes an infix expression, resolves an aliases before rewriting the
+;   infix expressions into standard LISP prefix expressions."
+;  [& expr]
+;  `(infix ~expr))
 ;
 ;
 ;(defmacro «
