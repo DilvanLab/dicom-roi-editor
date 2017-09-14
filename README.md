@@ -4,11 +4,12 @@ ROI (Region of Interest) Editor using a Polymer component, using [ClojureScript]
 
 To test component:
 
-1. You need [leiningen](http://leiningen.org), java installed, node.js and typescript.
-2. Clone project (or download and unzip project) using button above.
-3. Go to project folder and run `lein do clean, typescript, figwheel`
-4. On a browser, go to [`http://0.0.0.0:3449/`](http://0.0.0.0:3449/).
-5. Click on the "cloud icon" to download images.
+1. First you have to run [dicom-web-server](https://github.com/DilvanLab/dicom-web-server).
+2. You need [leiningen](http://leiningen.org), java installed, node.js and typescript.
+3. Clone project (or download and unzip project) using button above.
+4. Go to project folder and run `lein do clean, typescript, figwheel`
+5. On a browser, go to [`http://0.0.0.0:3449/`](http://0.0.0.0:3449/).
+6. Click on the "cloud icon" to download images.
 
 The demo has buttons to:
 
