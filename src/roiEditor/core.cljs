@@ -96,7 +96,6 @@
     (fn []
       ;(js/alert (js/JSON.stringify (clj->js (@views :pngs))))
       [:div
-       [:p "Running Efdg dfgdfgditor"]
        [:dicom-roi-editor
                 {;:is "dicom-roi-editor"
                  :id editor-id

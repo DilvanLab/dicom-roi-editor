@@ -1,10 +1,10 @@
-(ns roiEditor.devcards
-  (:require
-    #_[om.core :as om :include-macros true]
-    [sablono.core :as sab :include-macros true])
-  (:require-macros
-    [devcards.core :as dc :refer [defcard deftest]]))
-;(ns
+;(ns roiEditor.devcards
+;  (:require
+;    #_[om.core :as om :include-macros true]
+;    [sablono.core :as sab :include-macros true])
+;  (:require-macros
+;    [devcards.core :as dc :refer [defcard deftest]]))
+;;(ns
 ;  ;^{:description "Devcards: A high level introduction."
 ;   ; :rigsomelight-post true
 ;  roiEditor.devcards

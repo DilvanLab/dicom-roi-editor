@@ -18,3 +18,8 @@ The demo has buttons to:
 * move, 
 * change gradient (windowing). 
 * change planes' view: double clicking changes the images from 1 to 3 planes and back.
+
+
+Link to the [dcm4chee databank image](https://dcm4che.atlassian.net/wiki/spaces/ee2/pages/2555917/Database+Schema+Diagram).
+Not all data about series are in the databank tables. To get DICOM images using WADO it is nescessary to add 
+`"&contentType=application/dicom"` to the end of the file WADO URL. 
