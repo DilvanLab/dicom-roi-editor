@@ -203,6 +203,7 @@
    :current ""
    :tool :gradient
    :views {}})
+
 ;(def initial-state
 ;  {
 ;   :patients [{:id "idPatient" :studies [{:id "idStudy" :series [{:id "idSeries"}]}]}]

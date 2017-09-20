@@ -260,6 +260,7 @@
         (assoc-in [:current] "editor0"))))
        ;(assoc-in [:views "editor0" :tab] "1")
 
+  ;(.
 ;; -- Subscription Handlers ---------------------------------------------------
 
 (reg-sub
@@ -286,3 +287,5 @@
   :open-series
   (fn [db _]
     db))
+
+

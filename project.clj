@@ -105,7 +105,7 @@
                         :source-paths ["src" "devsrc"]
 
                         :figwheel {;:devcards true
-                                   :on-jsload "roiEditor.core/on-js-reload"
+                                   :on-jsload "roiEditor.core/mount-root" ;on-js-reload"
                                    ;; :open-urls will pop open your application
                                    ;; in the default browser once Figwheel has
                                    ;; started and compiled your application.
